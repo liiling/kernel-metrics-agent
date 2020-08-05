@@ -78,15 +78,16 @@ func handleErr(err error, message string) {
 	}
 }
 
-func createIntCounter(name string, desc string) metric.BoundInt64Counter {
+func createIntValueObserver(name string, desc string) metric.Int64ValueObserver {
 	meter := global.Meter("otel-switch-backend")
-	counter := metric.Must(meter).NewInt64Counter(name,
+	observer := metric.Must(meter).NewInt64ValueObserver(name,
+		updateMetric,
 		metric.WithDescription(desc),
-	).Bind(kv.String("label", "test"))
-	return counter
+	)
+	return observer
 }
 
-func getVisitCounter() int {
+func getVisitCounter() int64 {
 	resp, err := http.Get("http://localhost:8090/getVisitCounter")
 	handleErr(err, "Failed to issue GET request to localhost:8090/getVisitCounter")
 	defer resp.Body.Close()
@@ -97,22 +98,13 @@ func getVisitCounter() int {
 	numVisits, err := strconv.Atoi(string(respBody))
 	handleErr(err, "Failed to convert response to int")
 
-	return numVisits
+	return int64(numVisits)
 }
 
-func updateMetric(visitsCounter metric.BoundInt64Counter) {
-	numVisits := 0
-	ctx := context.Background()
-
-	for {
-		newNumVisits := getVisitCounter()
-		diff := newNumVisits - numVisits
-		if diff != 0 {
-			fmt.Printf("Updated number of visits: %v\n", newNumVisits)
-			numVisits = newNumVisits
-			visitsCounter.Add(ctx, int64(diff))
-		}
-	}
+func updateMetric(_ context.Context, result metric.Int64ObserverResult) {
+	numVisits := getVisitCounter()
+	fmt.Printf("Updated number of visits: %v\n", numVisits)
+	result.Observe(numVisits, kv.String("label", "test"))
 }
 
 func main() {
@@ -124,8 +116,9 @@ func main() {
 		defer exporter.Stop()
 	}
 
-	visitsCounter := createIntCounter("visit-counter",
-		"A counter representing number of times a website is visited.")
+	createIntValueObserver("visit-observer",
+		"A value observer representing number of times a website is visited.")
 
-	updateMetric(visitsCounter)
+	for {
+	}
 }
