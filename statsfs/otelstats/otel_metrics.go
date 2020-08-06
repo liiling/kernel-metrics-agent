@@ -46,7 +46,8 @@ func WalkDir(dir string) {
 
 func createMetric(path string, desc string) {
 	meter := global.MeterProvider().Meter("otel-stats")
-	_, statsName := filepath.Split(path)
+	devName, statsName := filepath.Split(path)
+	label := []kv.KeyValue{kv.String("device", devName), kv.String("stats", statsName)}
 
 	metric.Must(meter).NewInt64ValueObserver(path,
 		func(_ context.Context, result metric.Int64ObserverResult) {
@@ -56,7 +57,7 @@ func createMetric(path string, desc string) {
 			dataNum, err := strconv.Atoi(strings.TrimSuffix(string(data), "\n"))
 			handleErr(err, fmt.Sprintf("Failed to convert metric %v to int", path))
 
-			result.Observe(int64(dataNum), kv.String("stats", statsName))
+			result.Observe(int64(dataNum), label...)
 		},
 		metric.WithDescription(desc),
 	)
