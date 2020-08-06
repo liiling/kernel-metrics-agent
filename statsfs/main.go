@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	otelstats.WalkDir("./stubsys")
+	otelstats.InitOtelPipeline("./stubsys")
 }
