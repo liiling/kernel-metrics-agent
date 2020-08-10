@@ -63,13 +63,14 @@ func handleErr(err error, message string) {
 }
 
 // InitExporter initialise gcp, stdout or prometheus exporter based on cmd flag
-func InitExporter() {
+func InitExporter() *push.Controller {
 	fmt.Println("In exporters.go!")
 	exporterName := parseExporterName()
 	if exporterName == "prometheus" {
 		initPrometheusExporter()
-	} else {
-		exporter := initExporter(exporterName)
-		defer exporter.Stop()
+		return nil
 	}
+
+	exporter := initExporter(exporterName)
+	return exporter
 }

@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/metric"
-	//"go.opentelemetry.io/otel/sdk/export/metric"
 )
 
 // InitOtelPipeline initializes an OpenTelemetry pipeline
@@ -20,7 +19,10 @@ import (
 // stats to a backend of choice (gcp, stdout, prometheus)
 func InitOtelPipeline(path string) {
 	fmt.Println("In otel-metrics!")
-	InitExporter()
+	exporter := InitExporter()
+	if exporter != nil {
+		defer exporter.Stop()
+	}
 	WalkDir(path)
 	for {
 	}
