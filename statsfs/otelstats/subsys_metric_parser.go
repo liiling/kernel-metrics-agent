@@ -104,15 +104,20 @@ type SubsysMetrics struct {
 	Metrics       map[string][]MetricInfo
 }
 
-// CreateSubsysMetrics creates a SubsysMetric struct given the mounting
-// point of statsfs filesystem (statsfsPath) and the subsystemName
-func CreateSubsysMetrics(statsfsPath string, subsystemName string) (subsysMetrics SubsysMetrics) {
+func initSubsysMetricStruct(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
 	subsysMetrics = SubsysMetrics{
 		StatsfsPath:   statsfsPath,
 		SubsystemName: subsystemName,
 		SubSystemPath: strings.Join([]string{statsfsPath, subsystemName}, "/"),
 		Metrics:       make(map[string][]MetricInfo),
 	}
+	return
+}
+
+// CreateSubsysMetrics creates a SubsysMetric struct given the mounting
+// point of statsfs filesystem (statsfsPath) and the subsystemName
+func CreateSubsysMetrics(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
+	subsysMetrics = initSubsysMetricStruct(statsfsPath, subsystemName)
 	subsysMetrics.constructMetricMap()
 	subsysMetrics.print()
 	return
