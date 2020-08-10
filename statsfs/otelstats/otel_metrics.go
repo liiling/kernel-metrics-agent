@@ -3,6 +3,9 @@ package otelstats
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"strconv"
+	"strings"
 
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/api/kv"
@@ -25,7 +28,14 @@ func InitOtelPipeline(statsfsPath string, subsystemName string) {
 }
 
 func readMetricFromPath(metricPath string) (value int64) {
-	return 0
+	dataBytes, err := ioutil.ReadFile(metricPath)
+	handleErr(err, fmt.Sprintf("Failed to read metric at %v", metricPath))
+
+	data, err := strconv.Atoi(strings.TrimSuffix(string(dataBytes), "\n"))
+	handleErr(err, fmt.Sprintf("Failed to convert metric value at %v to int", metricPath))
+
+	value = int64(data)
+	return
 }
 
 func createMetric(metricName string, metricInfo []MetricInfo) {
