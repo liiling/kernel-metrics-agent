@@ -3,6 +3,7 @@ module otelstats
 go 1.14
 
 require (
+	github.com/google/go-cmp v0.5.1
 	github.com/prometheus/common v0.11.1 // indirect
 	go.opentelemetry.io/otel v0.10.0
 	go.opentelemetry.io/otel/exporters/metric/prometheus v0.10.0
