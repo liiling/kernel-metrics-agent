@@ -33,7 +33,7 @@ func (m SubsysMetrics) getMetricNameAndLabel(metricPath string) (metricName, lab
 	segs := strings.Split(metricPath, "/")
 	lastIdx := len(segs) - 1
 
-	metricName = strings.Join([]string{m.SubsystemName, segs[lastIdx]}, "/")
+	metricName = strings.Join([]string{m.SubSystemName, segs[lastIdx]}, "/")
 	label = strings.Join(segs[:lastIdx], "/")
 	return
 }
@@ -70,14 +70,14 @@ func (m SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error)
 
 func (m SubsysMetrics) constructMetricMap() {
 	err := filepath.Walk(m.SubSystemPath, m.updateMetricMap)
-	handleErr(err, fmt.Sprintf("Failed to parse metrics for subsystem %v at %v", m.SubsystemName, m.SubSystemPath))
+	handleErr(err, fmt.Sprintf("Failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath))
 }
 
 func (m SubsysMetrics) print() {
 	fmt.Println("------------------")
 	fmt.Printf("StatsfsPath: %v\n", m.StatsfsPath)
-	fmt.Printf("SubsystemName: %v\n", m.SubsystemName)
-	fmt.Printf("SubsystemPath: %v\n", m.SubSystemPath)
+	fmt.Printf("SubSystemName: %v\n", m.SubSystemName)
+	fmt.Printf("SubSystemPath: %v\n", m.SubSystemPath)
 	fmt.Println("Metrics:")
 	for metricName, labels := range m.Metrics {
 		fmt.Printf("\tmetricName: %v, info: %v\n", metricName, labels)
@@ -99,7 +99,7 @@ type MetricInfo struct {
 // the metric registered)
 type SubsysMetrics struct {
 	StatsfsPath   string
-	SubsystemName string
+	SubSystemName string
 	SubSystemPath string
 	Metrics       map[string][]MetricInfo
 }
@@ -107,7 +107,7 @@ type SubsysMetrics struct {
 func initSubsysMetricStruct(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
 	subsysMetrics = SubsysMetrics{
 		StatsfsPath:   statsfsPath,
-		SubsystemName: subsystemName,
+		SubSystemName: subsystemName,
 		SubSystemPath: strings.Join([]string{statsfsPath, subsystemName}, "/"),
 		Metrics:       make(map[string][]MetricInfo),
 	}
