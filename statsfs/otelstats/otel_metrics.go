@@ -44,7 +44,7 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 		func(_ context.Context, result metric.Int64ObserverResult) {
 			for _, info := range metricInfo {
 				result.Observe(
-					readMetricFromPath(info.MetricPath),
+					readMetricFromPath(info.Path),
 					kv.String("device", info.Label),
 				)
 			}

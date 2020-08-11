@@ -65,3 +65,27 @@ func TestGetMetricLabel(t *testing.T) {
 		}
 	}
 }
+
+func TestGetMetricInfo(t *testing.T) {
+	subsysMetric := SubsysMetrics{
+		SubSystemPath: "/sys/kernel/stats/subsystem",
+	}
+
+	paths := []string{
+		"/sys/kernel/stats/subsystem/metrics",
+		"/sys/kernel/stats/subsystem/device/metrics",
+		"/sys/kernel/stats/subsystem/device/subdevice/metrics",
+	}
+	expectedMetricInfo := []MetricInfo{
+		MetricInfo{Label: "", Path: paths[0]},
+		MetricInfo{Label: "/device", Path: paths[1]},
+		MetricInfo{Label: "/device/subdevice", Path: paths[2]},
+	}
+
+	for i, path := range paths {
+		actualMetricInfo := subsysMetric.getMetricInfo(path)
+		if diff := cmp.Diff(expectedMetricInfo[i], actualMetricInfo); diff != "" {
+			t.Errorf("getMetricInfo mismatch on input path = %s,(-expected +actual):\n%s", path, diff)
+		}
+	}
+}

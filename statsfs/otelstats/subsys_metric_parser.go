@@ -48,6 +48,24 @@ func (m SubsysMetrics) getMetricLabel(path string) (label string) {
 	return
 }
 
+// Given a path to a statsfs file, return a MetricInfo struct with label
+// computed by getMetricLabel method and Path being the input path
+// (the path from where the metric could be retrieved)
+// Example:
+//	Input:
+//		m.SubSystemPath = /sys/kernel/stats/net
+//		path = /sys/kernel/stats/net/eth0/sub0/latency
+//	Output:
+//		MetricInfo{
+//			Label: /eth0/sub0
+//			Path: /sys/kernel/stats/net/eth0/sub0/latency
+//		}
+func (m SubsysMetrics) getMetricInfo(path string) (metricInfo MetricInfo) {
+	label := m.getMetricLabel(path)
+	metricInfo = MetricInfo{Label: label, Path: path}
+	return
+}
+
 // Given a path to a statsfs file, update the metricMap of the corresponding
 // SubsysMetric stuct
 // Example:
@@ -57,15 +75,13 @@ func (m SubsysMetrics) getMetricLabel(path string) (label string) {
 //		m.StatsfsPath = /sys/kernel/stats
 //		path = /sys/kernel/stats/net/eth0/latency
 //	Output:
-//		metricPath = /eth0/latency
 //		metricName = net/latency
 //		label = /eth0
 //		new entry in m.Metrics[net/latency]:
-//			MetricInfo{Label: /eth0, MetricPath: /sys/kernel/stats/net/eth0/latency}
+//			MetricInfo{Label: /eth0, Path: /sys/kernel/stats/net/eth0/latency}
 func (m SubsysMetrics) updateMetricMapOneEntry(path string) {
 	metricName := m.getMetricName(path)
-	label := m.getMetricLabel(path)
-	metricInfo := MetricInfo{Label: label, MetricPath: path}
+	metricInfo := m.getMetricInfo(path)
 	m.Metrics[metricName] = append(m.Metrics[metricName], metricInfo)
 }
 
@@ -96,10 +112,10 @@ func (m SubsysMetrics) print() {
 }
 
 // MetricInfo contains a Label used to identify the specific device
-// and a MetricPath from where the metric for this device could be retrieved
+// and a Path from where the metric for this device could be retrieved
 type MetricInfo struct {
-	Label      string
-	MetricPath string
+	Label string
+	Path  string
 }
 
 // SubsysMetrics is a struct that represents metrics of a subsystem.
