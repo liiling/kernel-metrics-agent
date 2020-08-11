@@ -89,3 +89,38 @@ func TestGetMetricInfo(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateMetricMapOneEntry(t *testing.T) {
+	subsysMetric := SubsysMetrics{
+		StatsfsPath:   "/sys/kernel/stats",
+		SubSystemName: "subsystem",
+		SubSystemPath: "/sys/kernel/stats/subsystem",
+		Metrics:       make(map[string][]MetricInfo),
+	}
+
+	paths := []string{
+		"/sys/kernel/stats/subsystem/metrics0",
+		"/sys/kernel/stats/subsystem/device/metrics0",
+		"/sys/kernel/stats/subsystem/device/subdevice/metrics1",
+	}
+
+	expectedMetrics := []map[string][]MetricInfo{
+		{"subsystem/metrics0": []MetricInfo{MetricInfo{Label: "", Path: paths[0]}}},
+		{"subsystem/metrics0": []MetricInfo{MetricInfo{Label: "", Path: paths[0]},
+			MetricInfo{Label: "/device", Path: paths[1]},
+		}},
+		{"subsystem/metrics0": []MetricInfo{MetricInfo{Label: "", Path: paths[0]},
+			MetricInfo{Label: "/device", Path: paths[1]},
+		},
+			"subsystem/metrics1": []MetricInfo{MetricInfo{Label: "/device/subdevice", Path: paths[2]}},
+		},
+	}
+
+	for i, path := range paths {
+		subsysMetric.updateMetricMapOneEntry(path)
+		actualMetric := subsysMetric.Metrics
+		if diff := cmp.Diff(expectedMetrics[i], actualMetric); diff != "" {
+			t.Errorf("updateMetricMapOneEntry mismatch on input path = %s,(-expected +actual):\n%s", path, diff)
+		}
+	}
+}
