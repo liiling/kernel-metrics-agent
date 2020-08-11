@@ -55,6 +55,7 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 
 func createOtelMetricsForStatsfs(statsfsPath string) {
 	m := CreateStatsfsMetrics(statsfsPath)
+	m.Print()
 
 	for _, subsysMetrics := range m.Metrics {
 		for metricName, metricInfo := range subsysMetrics.Metrics {

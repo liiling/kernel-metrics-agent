@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	otelstats.InitOtelPipeline("stubsys/kernel/stats", "net")
+	otelstats.InitOtelPipeline("otelstats/testsys/kernel/stats")
 }

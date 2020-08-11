@@ -112,13 +112,16 @@ func (m SubsysMetrics) print() {
 	}
 }
 
-func (m StatsfsMetrics) print() {
+// Print prints StatsfsMetrics struct
+func (m StatsfsMetrics) Print() {
+	fmt.Println("\n####################################")
 	fmt.Printf("StatsfsPath: %v\n\n", m.StatsfsPath)
 	for subsysName, subsysMetrics := range m.Metrics {
 		fmt.Println("------------------")
 		fmt.Printf("Statsfs metrics for subsystem %v:\n\n", subsysName)
 		subsysMetrics.print()
 	}
+	fmt.Println("####################################\n")
 }
 
 // MetricInfo contains a Label used to identify the specific device
@@ -183,6 +186,5 @@ func CreateStatsfsMetrics(statsfsPath string) (metrics StatsfsMetrics) {
 	for _, subsystemName := range subsystemNames {
 		metrics.Metrics[subsystemName] = createSubsysMetrics(statsfsPath, subsystemName)
 	}
-	metrics.print()
 	return
 }
