@@ -7,34 +7,44 @@ import (
 	"strings"
 )
 
-// path = m.SubSystemPath + metricPath
+// Given a path to a statsfs file, return the metricName.
+// path = {m.StatsfsPath}/{m.SubSystemName}/{device paths(if any)}/{metricFileName}
+// metricName = {m.SubSystemName}/{metricFilename}
 // Example:
 //	Input:
-//		path = /sys/kernel/stats/net/eth0/latency,
-//		m.SubsystemPath = /sys/kernel/stats/net
-//	Output:
-//		metricPath = /eth0/latency
-func (m SubsysMetrics) getMetricPath(path string) string {
-	segs := strings.Split(path, m.SubSystemPath)
-	return segs[1]
-}
-
-// parse metricPath into metricName and label
-// metricPath = {label}/metricFileName
-// metricName = m.SubSystemName/metricfileName (last part of metricPath)
-// Example:
-// 	Input:
-//		m.SubSystemName = net
-//		metricPath = /eth0/latency
+//		path = /sys/kernel/stats/net/eth0/latency
+//			where
+//				m.StatsfsPath = /sys/kernel/stats
+//				m.SubsystemName = net
+//				device paths = eth0
+//				metricFileName = latency
 //	Output:
 //		metricName = net/latency
-//		label = /eth0
-func (m SubsysMetrics) getMetricNameAndLabel(metricPath string) (metricName, label string) {
-	segs := strings.Split(metricPath, "/")
-	lastIdx := len(segs) - 1
+func (m SubsysMetrics) getMetricName(path string) (metricName string) {
+	segs := strings.Split(path, "/")
+	metricFileName := segs[len(segs)-1]
+	metricName = strings.Join([]string{m.SubSystemName, metricFileName}, "/")
+	return
+}
 
-	metricName = strings.Join([]string{m.SubSystemName, segs[lastIdx]}, "/")
-	label = strings.Join(segs[:lastIdx], "/")
+// Given a path to a statsfs file, return the label of the metric.
+// path = {m.SubSystemPath}/{device paths(if any)}/{metricFileName}
+// label = {device paths (if any)}
+// Example:
+//	Input:
+//		path = /sys/kernel/stats/net/eth0/latency
+//			where
+//				m.StatsfsPath = /sys/kernel/stats
+//				m.SubSystemName = net
+//				m.SubSystemPath = /sys/kernel/stats/net
+//				device paths = /eth0/sub0
+//				metricFileName = latency
+//	Output:
+// 		label = /eth0/sub0
+func (m SubsysMetrics) getMetricLabel(path string) (label string) {
+	metricStr := strings.Split(path, m.SubSystemPath)[1]
+	labelSeg := strings.Split(metricStr, "/")
+	label = strings.Join(labelSeg[:len(labelSeg)-1], "/")
 	return
 }
 
@@ -53,8 +63,8 @@ func (m SubsysMetrics) getMetricNameAndLabel(metricPath string) (metricName, lab
 //		new entry in m.Metrics[net/latency]:
 //			MetricInfo{Label: /eth0, MetricPath: /sys/kernel/stats/net/eth0/latency}
 func (m SubsysMetrics) updateMetricMapOneEntry(path string) {
-	metricPath := m.getMetricPath(path)
-	metricName, label := m.getMetricNameAndLabel(metricPath)
+	metricName := m.getMetricName(path)
+	label := m.getMetricLabel(path)
 	metricInfo := MetricInfo{Label: label, MetricPath: path}
 	m.Metrics[metricName] = append(m.Metrics[metricName], metricInfo)
 }

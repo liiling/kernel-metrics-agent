@@ -22,53 +22,46 @@ func TestInitSubsysMetricStruct(t *testing.T) {
 	}
 }
 
-func TestGetMetricPath(t *testing.T) {
+func TestGetMetricName(t *testing.T) {
 	subsysMetric := SubsysMetrics{
-		SubSystemPath: "/sys/kernel/stats/subsystem",
+		SubSystemName: "subsystem",
 	}
-	inputPaths := []string{
+
+	paths := []string{
 		"/sys/kernel/stats/subsystem/metrics",
 		"/sys/kernel/stats/subsystem/device/metrics",
 		"/sys/kernel/stats/subsystem/device/subdevice/metrics",
 	}
-	expected := []string{
-		"/metrics",
-		"/device/metrics",
-		"/device/subdevice/metrics",
-	}
+	expectedMetricName := "subsystem/metrics"
 
-	for i, inputPath := range inputPaths {
-		actual := subsysMetric.getMetricPath(inputPath)
-		if diff := cmp.Diff(expected[i], actual); diff != "" {
-			t.Errorf("getMetricPath mismatch \ninput path = %s,(-expected +actual):\n%s", inputPath, diff)
+	for _, path := range paths {
+		actualMetricName := subsysMetric.getMetricName(path)
+		if diff := cmp.Diff(expectedMetricName, actualMetricName); diff != "" {
+			t.Errorf("getMetricName mismatch on input path = %s,(-expected +actual):\n%s", path, diff)
 		}
 	}
 }
 
-func TestGetMetricNameAndLabel(t *testing.T) {
+func TestGetMetricLabel(t *testing.T) {
 	subsysMetric := SubsysMetrics{
-		SubSystemName: "subsystem",
-	}
-	metricPaths := []string{
-		"/metrics",
-		"/device/metrics",
-		"/device/subdevice/metrics",
+		SubSystemPath: "/sys/kernel/stats/subsystem",
 	}
 
-	expectedMetricName := "subsystem/metrics"
+	paths := []string{
+		"/sys/kernel/stats/subsystem/metrics",
+		"/sys/kernel/stats/subsystem/device/metrics",
+		"/sys/kernel/stats/subsystem/device/subdevice/metrics",
+	}
 	expectedLabels := []string{
 		"",
 		"/device",
 		"/device/subdevice",
 	}
 
-	for i, path := range metricPaths {
-		actualMetricName, actualLabel := subsysMetric.getMetricNameAndLabel(path)
-		if metricNameDiff := cmp.Diff(expectedMetricName, actualMetricName); metricNameDiff != "" {
-			t.Errorf("getMetricNameAndLabel mismatch on metric name\ninput path = %s,(-expected +actual):\n%s", path, metricNameDiff)
-		}
-		if labelDiff := cmp.Diff(expectedLabels[i], actualLabel); labelDiff != "" {
-			t.Errorf("getMetricNameAndLabel mismatch on label\ninput path = %s,(-expected +actual):\n%s", path, labelDiff)
+	for i, path := range paths {
+		actualLabel := subsysMetric.getMetricLabel(path)
+		if diff := cmp.Diff(expectedLabels[i], actualLabel); diff != "" {
+			t.Errorf("getMetricLabel mismatch on input path = %s,(-expected +actual):\n%s", path, diff)
 		}
 	}
 }
