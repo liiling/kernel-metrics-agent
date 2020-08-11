@@ -15,13 +15,13 @@ import (
 // InitOtelPipeline initializes an OpenTelemetry pipeline
 // that crawls a user defined path and exports all the available
 // stats to a backend of choice (gcp, stdout, prometheus)
-func InitOtelPipeline(statsfsPath string, subsystemName string) {
+func InitOtelPipeline(statsfsPath string) {
 	fmt.Println("In otel-metrics!")
 	exporter := InitExporter()
 	if exporter != nil {
 		defer exporter.Stop()
 	}
-	CreateOtelMetricsForSubsys(statsfsPath, subsystemName)
+	createOtelMetricsForStatsfs(statsfsPath)
 
 	for {
 	}
@@ -53,10 +53,12 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 	)
 }
 
-func CreateOtelMetricsForSubsys(statsfsPath string, subsystemName string) {
-	m := CreateSubsysMetrics(statsfsPath, subsystemName)
+func createOtelMetricsForStatsfs(statsfsPath string) {
+	m := CreateStatsfsMetrics(statsfsPath)
 
-	for metricName, metricInfo := range m.Metrics {
-		createMetric(metricName, metricInfo)
+	for _, subsysMetrics := range m.Metrics {
+		for metricName, metricInfo := range subsysMetrics.Metrics {
+			createMetric(metricName, metricInfo)
+		}
 	}
 }
