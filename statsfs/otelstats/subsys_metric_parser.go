@@ -100,15 +100,25 @@ func (m SubsysMetrics) constructMetricMap() {
 }
 
 func (m SubsysMetrics) print() {
-	fmt.Println("------------------")
 	fmt.Printf("StatsfsPath: %v\n", m.StatsfsPath)
 	fmt.Printf("SubSystemName: %v\n", m.SubSystemName)
 	fmt.Printf("SubSystemPath: %v\n", m.SubSystemPath)
 	fmt.Println("Metrics:")
 	for metricName, labels := range m.Metrics {
-		fmt.Printf("\tmetricName: %v, info: %v\n", metricName, labels)
+		fmt.Printf("\tmetricName: %v,\n\tinfo: \n", metricName)
+		for _, label := range labels {
+			fmt.Printf("\t\tLabel: %v, Path: %v\n", label.Label, label.Path)
+		}
 	}
-	fmt.Println("------------------")
+}
+
+func (m StatsfsMetrics) print() {
+	fmt.Printf("StatsfsPath: %v\n\n", m.StatsfsPath)
+	for subsysName, subsysMetrics := range m.Metrics {
+		fmt.Println("------------------")
+		fmt.Printf("Statsfs metrics for subsystem %v:\n\n", subsysName)
+		subsysMetrics.print()
+	}
 }
 
 // MetricInfo contains a Label used to identify the specific device
@@ -130,6 +140,14 @@ type SubsysMetrics struct {
 	Metrics       map[string][]MetricInfo
 }
 
+// StatsfsMetrics is a struct that represents metrics available in a statsfs
+// filesystem found at StatsfsPath
+// Each subsystem metrics is represented with a SubsysMetrics struct
+type StatsfsMetrics struct {
+	StatsfsPath string
+	Metrics     map[string]SubsysMetrics
+}
+
 func initSubsysMetricStruct(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
 	subsysMetrics = SubsysMetrics{
 		StatsfsPath:   statsfsPath,
@@ -140,11 +158,31 @@ func initSubsysMetricStruct(statsfsPath, subsystemName string) (subsysMetrics Su
 	return
 }
 
-// CreateSubsysMetrics creates a SubsysMetric struct given the mounting
+// createSubsysMetrics creates a SubsysMetric struct given the mounting
 // point of statsfs filesystem (statsfsPath) and the subsystemName
-func CreateSubsysMetrics(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
+func createSubsysMetrics(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
 	subsysMetrics = initSubsysMetricStruct(statsfsPath, subsystemName)
 	subsysMetrics.constructMetricMap()
-	subsysMetrics.print()
+	return
+}
+
+// CreateStatsfsMetrics creates a StatsfsMetrics struct given the mounting
+// point of statsfs filesystem (statsfsPath)
+func CreateStatsfsMetrics(statsfsPath string) (metrics StatsfsMetrics) {
+	metrics = StatsfsMetrics{
+		StatsfsPath: statsfsPath,
+		Metrics:     make(map[string]SubsysMetrics),
+	}
+	statsfsDir, err := os.Open(statsfsPath)
+	handleErr(err, fmt.Sprintf("Failed to open statsfs dir at %v", statsfsPath))
+	defer statsfsDir.Close()
+
+	subsystemNames, err := statsfsDir.Readdirnames(0)
+	handleErr(err, fmt.Sprintf("Failed to read dirnames from statsfs dir at %v", statsfsPath))
+
+	for _, subsystemName := range subsystemNames {
+		metrics.Metrics[subsystemName] = createSubsysMetrics(statsfsPath, subsystemName)
+	}
+	metrics.print()
 	return
 }
