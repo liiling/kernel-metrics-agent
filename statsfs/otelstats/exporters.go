@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	mexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric"
+
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/exporters/metric/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout"
@@ -38,9 +40,22 @@ func initStdoutExporter() *push.Controller {
 	return exporter
 }
 
+func initGCPExporter() *push.Controller {
+	opts := []mexporter.Option{}
+	// Minimum interval for GCP exporter is 10s
+	exporter, err := mexporter.NewExportPipeline(opts, push.WithPeriod(time.Second*10))
+	handleErr(err, "Failed to initialize metric exporter")
+
+	global.SetMeterProvider(exporter.Provider())
+
+	return exporter
+}
+
 func initExporter(exporterName string) (exporter *push.Controller) {
 	if exporterName == "stdout" {
 		exporter = initStdoutExporter()
+	} else if exporterName == "gcp" {
+		exporter = initGCPExporter()
 	} else {
 		err := errors.New("Invalid exporter name")
 		handleErr(err, fmt.Sprintf("Exporter name %v is not allowed.", exporterName))

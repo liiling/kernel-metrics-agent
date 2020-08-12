@@ -114,14 +114,14 @@ func (m SubsysMetrics) print() {
 
 // Print prints StatsfsMetrics struct
 func (m StatsfsMetrics) Print() {
-	fmt.Println("\n####################################")
+	fmt.Print("\n####################################\n")
 	fmt.Printf("StatsfsPath: %v\n\n", m.StatsfsPath)
 	for subsysName, subsysMetrics := range m.Metrics {
 		fmt.Println("------------------")
 		fmt.Printf("Statsfs metrics for subsystem %v:\n\n", subsysName)
 		subsysMetrics.print()
 	}
-	fmt.Println("####################################\n")
+	fmt.Printf("####################################\n\n")
 }
 
 // MetricInfo contains a Label used to identify the specific device

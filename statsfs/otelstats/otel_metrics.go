@@ -40,7 +40,7 @@ func readMetricFromPath(metricPath string) (value int64) {
 
 func createMetric(metricName string, metricInfo []MetricInfo) {
 	meter := global.MeterProvider().Meter("otel-stats")
-	metric.Must(meter).NewInt64UpDownSumObserver(metricName,
+	metric.Must(meter).NewInt64ValueObserver(metricName,
 		func(_ context.Context, result metric.Int64ObserverResult) {
 			for _, info := range metricInfo {
 				result.Observe(
