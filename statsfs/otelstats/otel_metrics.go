@@ -15,9 +15,8 @@ import (
 // InitOtelPipeline initializes an OpenTelemetry pipeline
 // that crawls a user defined path and exports all the available
 // stats to a backend of choice (gcp, stdout, prometheus)
-func InitOtelPipeline(statsfsPath string) {
-	fmt.Println("In otel-metrics!")
-	exporter := InitExporter()
+func InitOtelPipeline(exporterName, statsfsPath string) {
+	exporter := InitExporter(exporterName)
 	if exporter != nil {
 		defer exporter.Stop()
 	}

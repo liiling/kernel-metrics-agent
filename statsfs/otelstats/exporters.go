@@ -2,7 +2,6 @@ package otelstats
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -51,7 +50,18 @@ func initGCPExporter() *push.Controller {
 	return exporter
 }
 
-func initExporter(exporterName string) (exporter *push.Controller) {
+func handleErr(err error, message string) {
+	if err != nil {
+		log.Fatalf("%s: %v", message, err)
+	}
+}
+
+// InitExporter initialise gcp, stdout or prometheus exporter based on cmd flag
+func InitExporter(exporterName string) (exporter *push.Controller) {
+	if exporterName == "prometheus" {
+		initPrometheusExporter()
+		return nil
+	}
 	if exporterName == "stdout" {
 		exporter = initStdoutExporter()
 	} else if exporterName == "gcp" {
@@ -61,31 +71,4 @@ func initExporter(exporterName string) (exporter *push.Controller) {
 		handleErr(err, fmt.Sprintf("Exporter name %v is not allowed.", exporterName))
 	}
 	return
-}
-
-func parseExporterName() string {
-	exporterName := flag.String("exporter", "prometheus", "Exporter to use. Choose between prometheus (default), stdout and gcp")
-	flag.Parse()
-
-	fmt.Printf("Exporter: %v\n", *exporterName)
-	return *exporterName
-}
-
-func handleErr(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
-	}
-}
-
-// InitExporter initialise gcp, stdout or prometheus exporter based on cmd flag
-func InitExporter() *push.Controller {
-	fmt.Println("In exporters.go!")
-	exporterName := parseExporterName()
-	if exporterName == "prometheus" {
-		initPrometheusExporter()
-		return nil
-	}
-
-	exporter := initExporter(exporterName)
-	return exporter
 }
