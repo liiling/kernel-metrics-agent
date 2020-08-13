@@ -1,4 +1,11 @@
-## Build Linux Kernel with Statsfs Patch on a VM Running Ubuntu18.04
+## Table of Contents
+
+1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-a-ubuntu18.04-vm)
+2. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
+3. [Notes](#notes)
+4. [Resources](#resources)
+
+## Buildi Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
 
 1. `git clone https://github.com/esposem/linux.git`
 2. `git fetch origin statsfs-final` (Fetch the branch with example)
@@ -28,6 +35,71 @@ sudo apt-get install build-essential libncurses-dev bison flex libssl-dev libelf
 13. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/stats`
 14. Check statsfs is mounted: `cat /proc/mounts | grep stats`
 15. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/stats`
+
+
+
+## Instrument Statsfs with OpenTelemetry
+
+### Statsfs filesystem structure
+
+Assume statsfs is mounted at `/sys/kernel/stats/` (statsfs root), each Linux
+subsystem with statsfs metrics should appear as a directory under statsfs
+root. 
+Each device or subdevice should appear as a directory under the subsystem directory, and each metric appears as a file with filename being the metric reported. 
+The folder [otelstats/testsys](https://github.com/liiling/kernel-metrics-agent/tree/statsfs/statsfs/otelstats/testsys/) shows a test example of statsfs filesystem.
+
+The current statsfs documentation is found [here](https://github.com/esposem/linux/blob/35624f8292988e2f3189c1b4d2cb503a47230df0/Documentation/filesystems/stats_fs.rst).
+
+Example tree structure:
+```bash
+sys
+└── kernel
+    └── stats
+        ├── subsys0
+        │   ├── dev0
+        │   │   ├── m0
+        │   │   └── m1
+        │   └── dev1
+        │       └── m0
+        └── subsys1
+            ├── dev0
+            │   ├── in_all_m
+            │   ├── in_both_devs_m
+            │   ├── in_top_and_dev0_m
+            │   └── only_in_dev0_m
+            ├── dev1
+            │   ├── in_all_m
+            │   └── in_both_devs_m
+            ├── in_all_m
+            ├── in_top_and_dev0_m
+            └── top_level_m
+```
+
+### Statsfs to OpenTelemetry Metrics
+
+Metrics in OpenTelemetry are defined by their semantically meaningful and unique names. Each metric could be associated with multiple labels (key-value pairs).
+One way to transform statsfs metrics to OpenTelemetry metrics is using `subsys/metric_filename` as OpenTelemetry metric name, and the device path as label.
+For example, a statsfs metric file `sys/kernel/stats/subsys0/dev0/subdev0/metric0` denotes a statsfs metric named `metric0` for a device `dev0/subdev0` under a Linux subsystem `subsys0`.
+When ported to OpenTelemetry, the metric will appear with name `subsys0/metric0`, and label `device=/dev0/subdev0`.
+
+### Reflections on Combining Statsfs and OpenTelemetry
+
+1. Lack of metadata from statsfs:
+
+    OpenTelemetry provides six types of [metric instruments](https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/metrics/api.md#metric-instruments), three of which (SumObserver, UpDownSumObserver, ValueObserver) are asynchronous. 
+    [Statsfs](https://github.com/esposem/linux/blob/35624f8292988e2f3189c1b4d2cb503a47230df0/Documentation/filesystems/stats_fs.rst) provides two metric value types: cumulative and floating, where cumulative values are forever increasing (maps to SumObserver in OpenTelemetry) and floating value could exhibit different behaviors (maps to UpDownSumObserver or ValueObserver in OpenTelemetry).
+    Although the kernel developers could write code to decide the value type of the exposed statsfs metrics, the exposed metric files themselves have no information on the metric type.
+    Currently, the demo uses ValueObserver, the most generous, all-encompassing OpenTelemetry instrument for all statsfs metrics. However, this behavior is not ideal. For instance, it allows strictly increasing metrics to exhibit floating behavior.
+
+2. Different ways of viewing metrics:
+
+    Statsfs is organised as `Linux subsystem -> device -> subdevice -> metrics`. The same metrics can be added to many different sources/devices.
+    OpenTelemetry is organised as `metrics & a list of labels`. Each metrics has a unique name, with labels specifying details such as devices.
+
+3. Number of I/O operation per metrics:
+
+    In statsfs, the same metric for different devices in the same subsystem are spread across multiple files. 
+    This implies that with the current design of the statsfs -> OpenTelemetry demo, exporting one metrics (along with the list of all associated labels) requires many file I/O operations.
 
 ## Notes
 
