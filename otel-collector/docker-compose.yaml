@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  # The go application with an incrementing counter
+  # instrumented with OpenTelemetry, exported to OTLP
+  go-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./main.go:/usr/src/main.go
+    environment:
+      - GO111MODULE=on
+    command: ["bash", "-c", "go run /usr/src/main.go"]
+    ports:
+      - "2112" # prometheus receiver endpoint
+
+  # OpenTelemetry Collector
+  otel-agent:
+    image: ${OTELCOL_IMG}
+    command: ["--config=/etc/otel-agent-config.yaml", "${OTELCOL_ARGS}"]
+    volumes:
+      - ./otel-agent-config.yaml:/etc/otel-agent-config.yaml
+    ports:
+      - "8889:8889" # Prometheus exporter metrics
+    depends_on:
+      - go-app
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-agent
