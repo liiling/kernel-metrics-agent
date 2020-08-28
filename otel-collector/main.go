@@ -41,7 +41,7 @@ func createIntSumCounter() metric.Int64Counter {
 func incrementCounterMetrics(ctx context.Context, counter metric.BoundInt64Counter) {
 	for i := 1; ; {
 		counter.Add(ctx, int64(i))
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second)
 	}
 }
 

@@ -10,10 +10,12 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:8889" # where metrics are sent to
     namespace: "promexample"
+  stackdriver:
+    metric_prefix: "otel-stackdriver-example"
 
 service:
   pipelines:
     metrics:
       receivers: [prometheus]
       processors: []
-      exporters: [prometheus]
+      exporters: [prometheus, stackdriver]
