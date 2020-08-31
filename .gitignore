@@ -1,3 +1,6 @@
+# Data files
+*.json
+
 # Prometheus data folder
 data
 

@@ -1,0 +1,22 @@
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel'
+          static_configs:
+            - targets: ["go-app:2112"]
+            - targets: ["node-exporter:9100"]
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889" # where metrics are sent to
+    namespace: "promexample"
+  stackdriver:
+    metric_prefix: "otel-stackdriver-example"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [prometheus]
+      processors: []
+      exporters: [prometheus, stackdriver]
