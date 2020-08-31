@@ -5,6 +5,7 @@ receivers:
         - job_name: 'otel'
           static_configs:
             - targets: ["go-app:2112"]
+            - targets: ["node-exporter:9100"]
 
 exporters:
   prometheus:

@@ -2,7 +2,7 @@ version: "3"
 
 services:
   # The go application with an incrementing counter
-  # instrumented with OpenTelemetry, exported to OTLP
+  # instrumented with Prometheus, exported to OTLP
   go-app:
     build:
       context: .
@@ -29,6 +29,13 @@ services:
       - "8888:8888" # Otelcol status metrics
     depends_on:
       - go-app
+      - node-exporter
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - 9100:9100
+
 
   prometheus:
     image: prom/prometheus:latest
