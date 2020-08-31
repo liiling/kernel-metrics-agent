@@ -1,6 +1,9 @@
 # Data files
 *.json
 
+# Prometheus data folder
+data
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
