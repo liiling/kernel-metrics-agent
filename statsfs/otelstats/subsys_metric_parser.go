@@ -21,11 +21,11 @@ import (
 //				metricFileName = latency
 //	Output:
 //		metricName = net/latency
-func (m SubsysMetrics) getMetricName(path string) (metricName string) {
+func (m SubsysMetrics) getMetricName(path string) string {
 	segs := strings.Split(path, "/")
 	metricFileName := segs[len(segs)-1]
-	metricName = strings.Join([]string{m.SubSystemName, metricFileName}, "/")
-	return
+	metricName := strings.Join([]string{m.SubSystemName, metricFileName}, "/")
+	return metricName
 }
 
 // Given a path to a statsfs file, return the label of the metric.
@@ -42,11 +42,11 @@ func (m SubsysMetrics) getMetricName(path string) (metricName string) {
 //				metricFileName = latency
 //	Output:
 // 		label = /eth0/sub0
-func (m SubsysMetrics) getMetricLabel(path string) (label string) {
+func (m SubsysMetrics) getMetricLabel(path string) string {
 	metricStr := strings.Split(path, m.SubSystemPath)[1]
 	labelSeg := strings.Split(metricStr, "/")
-	label = strings.Join(labelSeg[:len(labelSeg)-1], "/")
-	return
+	label := strings.Join(labelSeg[:len(labelSeg)-1], "/")
+	return label
 }
 
 // Given a path to a statsfs file, return a MetricInfo struct with label
@@ -61,10 +61,10 @@ func (m SubsysMetrics) getMetricLabel(path string) (label string) {
 //			Label: /eth0/sub0
 //			Path: /sys/kernel/stats/net/eth0/sub0/latency
 //		}
-func (m SubsysMetrics) getMetricInfo(path string) (metricInfo MetricInfo) {
+func (m SubsysMetrics) getMetricInfo(path string) MetricInfo {
 	label := m.getMetricLabel(path)
-	metricInfo = MetricInfo{Label: label, Path: path}
-	return
+	metricInfo := MetricInfo{Label: label, Path: path}
+	return metricInfo
 }
 
 // Given a path to a statsfs file, update the metricMap of the corresponding
@@ -156,25 +156,25 @@ type StatsfsMetrics struct {
 	Metrics     map[string]SubsysMetrics
 }
 
-func initSubsysMetricStruct(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
-	subsysMetrics = SubsysMetrics{
+func initSubsysMetricStruct(statsfsPath, subsystemName string) SubsysMetrics {
+	subsysMetrics := SubsysMetrics{
 		StatsfsPath:   statsfsPath,
 		SubSystemName: subsystemName,
 		SubSystemPath: strings.Join([]string{statsfsPath, subsystemName}, "/"),
 		Metrics:       make(map[string][]MetricInfo),
 	}
-	return
+	return subsysMetrics
 }
 
 // createSubsysMetrics creates a SubsysMetric struct given the mounting
 // point of statsfs filesystem (statsfsPath) and the subsystemName
-func createSubsysMetrics(statsfsPath, subsystemName string) (subsysMetrics SubsysMetrics) {
-	subsysMetrics = initSubsysMetricStruct(statsfsPath, subsystemName)
+func createSubsysMetrics(statsfsPath, subsystemName string) SubsysMetrics {
+	subsysMetrics := initSubsysMetricStruct(statsfsPath, subsystemName)
 	subsysMetrics.constructMetricMap()
-	return
+	return subsysMetrics
 }
 
-// createStatsfsMetrics creates a StatsfsMetrics struct given the mounting
+// CreateStatsfsMetrics creates a StatsfsMetrics struct given the mounting
 // point of statsfs filesystem (statsfsPath)
 func CreateStatsfsMetrics(statsfsPath string) (*StatsfsMetrics, error) {
 	metrics := StatsfsMetrics{
