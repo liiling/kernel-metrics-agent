@@ -1,9 +1,7 @@
 package otelstats
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -16,59 +14,57 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 )
 
-func initPrometheusExporter() {
+func initPrometheusExporter() error {
 	exporter, err := prometheus.InstallNewPipeline(prometheus.Config{}, pull.WithCachePeriod(time.Second*10))
-	handleErr(err, "Failed to initialize Prometheus metric exporter")
+	if err != nil {
+		return fmt.Errorf("Failed to initialize Prometheus metric exporter: %v", err)
+	}
 
 	port := 2112
 	http.HandleFunc("/metrics", exporter.ServeHTTP)
 	go http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	fmt.Printf("Prometheus server running on :%d\n", port)
 	global.SetMeterProvider(exporter.Provider())
+	return nil
 }
 
-func initStdoutExporter() *push.Controller {
+func initStdoutExporter() (*push.Controller, error) {
 	exportOpts := []stdout.Option{stdout.WithPrettyPrint()}
 	pushOpts := []push.Option{push.WithPeriod(time.Second * 10)}
 	_, exporter, err := stdout.NewExportPipeline(
 		exportOpts,
 		pushOpts,
 	)
-	handleErr(err, "Failed to initialize Stdout metric exporter")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialize stdout metric exporter: %v", err)
+	}
 	global.SetMeterProvider(exporter.Provider())
-	return exporter
+	return exporter, nil
 }
 
-func initGCPExporter() *push.Controller {
+func initGCPExporter() (*push.Controller, error) {
 	opts := []mexporter.Option{}
 	// Minimum interval for GCP exporter is 10s
 	exporter, err := mexporter.NewExportPipeline(opts, push.WithPeriod(time.Second*10))
-	handleErr(err, "Failed to initialize metric exporter")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to initialize GCP metric exporter: %v", err)
+	}
 
 	global.SetMeterProvider(exporter.Provider())
-
-	return exporter
-}
-
-func handleErr(err error, message string) {
-	if err != nil {
-		log.Fatalf("%s: %v", message, err)
-	}
+	return exporter, nil
 }
 
 // InitExporter initialise gcp, stdout or prometheus exporter based on cmd flag
-func InitExporter(exporterName string) (exporter *push.Controller) {
-	if exporterName == "prometheus" {
-		initPrometheusExporter()
-		return nil
+func InitExporter(exporterName string) (*push.Controller, error) {
+	switch exporterName {
+	case "prometheus":
+		err := initPrometheusExporter()
+		return nil, err
+	case "stdout":
+		return initStdoutExporter()
+	case "gcp":
+		return initGCPExporter()
+	default:
+		return nil, fmt.Errorf("invalid exporter name %v", exporterName)
 	}
-	if exporterName == "stdout" {
-		exporter = initStdoutExporter()
-	} else if exporterName == "gcp" {
-		exporter = initGCPExporter()
-	} else {
-		err := errors.New("Invalid exporter name")
-		handleErr(err, fmt.Sprintf("Exporter name %v is not allowed.", exporterName))
-	}
-	return
 }

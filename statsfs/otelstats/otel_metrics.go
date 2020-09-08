@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"strings"
 
@@ -16,25 +17,36 @@ import (
 // that crawls a user defined path and exports all the available
 // stats to a backend of choice (gcp, stdout, prometheus)
 func InitOtelPipeline(exporterName, statsfsPath string) {
-	exporter := InitExporter(exporterName)
+	exporter, err := InitExporter(exporterName)
+	if err != nil {
+		log.Panicf("Failed to initialize exporter %v: %v\n", exporterName, err)
+	}
 	if exporter != nil {
 		defer exporter.Stop()
 	}
-	createOtelMetricsForStatsfs(statsfsPath)
+
+	err = createOtelMetricsForStatsfs(statsfsPath)
+	if err != nil {
+		log.Panic(err)
+	}
 
 	for {
 	}
 }
 
-func readMetricFromPath(metricPath string) (value int64) {
+func readMetricFromPath(metricPath string) int64 {
 	dataBytes, err := ioutil.ReadFile(metricPath)
-	handleErr(err, fmt.Sprintf("Failed to read metric at %v", metricPath))
+	if err != nil {
+		log.Printf("Failed to read metric at %v: %v\n", metricPath, err)
+	}
 
 	data, err := strconv.Atoi(strings.TrimSuffix(string(dataBytes), "\n"))
-	handleErr(err, fmt.Sprintf("Failed to convert metric value at %v to int", metricPath))
+	if err != nil {
+		log.Printf("Failed to convert metric value at %v to int: %v\n", metricPath, err)
+	}
 
-	value = int64(data)
-	return
+	value := int64(data)
+	return value
 }
 
 func createMetric(metricName string, metricInfo []MetricInfo) {
@@ -52,8 +64,11 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 	)
 }
 
-func createOtelMetricsForStatsfs(statsfsPath string) {
-	m := CreateStatsfsMetrics(statsfsPath)
+func createOtelMetricsForStatsfs(statsfsPath string) error {
+	m, err := CreateStatsfsMetrics(statsfsPath)
+	if err != nil {
+		return fmt.Errorf("Failed to create statsfs metrics for %v: %v", statsfsPath, err)
+	}
 	m.Print()
 
 	for _, subsysMetrics := range m.Metrics {
@@ -61,4 +76,5 @@ func createOtelMetricsForStatsfs(statsfsPath string) {
 			createMetric(metricName, metricInfo)
 		}
 	}
+	return nil
 }

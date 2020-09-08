@@ -2,6 +2,7 @@ package otelstats
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,7 +87,9 @@ func (m SubsysMetrics) updateMetricMapOneEntry(path string) {
 }
 
 func (m SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error) error {
-	handleErr(err, fmt.Sprintf("Failed to walk to file %v", path))
+	if err != nil {
+		log.Printf("Failed to walk to file %v\n", path)
+	}
 
 	if !info.IsDir() {
 		m.updateMetricMapOneEntry(path)
@@ -96,7 +99,9 @@ func (m SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error)
 
 func (m SubsysMetrics) constructMetricMap() {
 	err := filepath.Walk(m.SubSystemPath, m.updateMetricMap)
-	handleErr(err, fmt.Sprintf("Failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath))
+	if err != nil {
+		log.Printf("Failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath)
+	}
 }
 
 func (m SubsysMetrics) print() {
@@ -169,22 +174,26 @@ func createSubsysMetrics(statsfsPath, subsystemName string) (subsysMetrics Subsy
 	return
 }
 
-// CreateStatsfsMetrics creates a StatsfsMetrics struct given the mounting
+// createStatsfsMetrics creates a StatsfsMetrics struct given the mounting
 // point of statsfs filesystem (statsfsPath)
-func CreateStatsfsMetrics(statsfsPath string) (metrics StatsfsMetrics) {
-	metrics = StatsfsMetrics{
+func CreateStatsfsMetrics(statsfsPath string) (*StatsfsMetrics, error) {
+	metrics := StatsfsMetrics{
 		StatsfsPath: statsfsPath,
 		Metrics:     make(map[string]SubsysMetrics),
 	}
 	statsfsDir, err := os.Open(statsfsPath)
-	handleErr(err, fmt.Sprintf("Failed to open statsfs dir at %v", statsfsPath))
+	if err != nil {
+		return nil, fmt.Errorf("failed to open statsfs dir at %v: %v", statsfsPath, err)
+	}
 	defer statsfsDir.Close()
 
 	subsystemNames, err := statsfsDir.Readdirnames(0)
-	handleErr(err, fmt.Sprintf("Failed to read dirnames from statsfs dir at %v", statsfsPath))
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dirnames from statsfs dir at %v: %v", statsfsPath, err)
+	}
 
 	for _, subsystemName := range subsystemNames {
 		metrics.Metrics[subsystemName] = createSubsysMetrics(statsfsPath, subsystemName)
 	}
-	return
+	return &metrics, nil
 }

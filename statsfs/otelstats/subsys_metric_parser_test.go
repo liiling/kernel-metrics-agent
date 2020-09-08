@@ -9,10 +9,10 @@ import (
 
 func TestCreateStatsfsMetrics(t *testing.T) {
 	statsfspath := "testsys/kernel/stats"
-	expected := otelstats.StatsfsMetrics{
+	expected := &otelstats.StatsfsMetrics{
 		StatsfsPath: statsfspath,
 		Metrics: map[string]otelstats.SubsysMetrics{
-			"subsys0": otelstats.SubsysMetrics{
+			"subsys0": {
 				StatsfsPath:   statsfspath,
 				SubSystemName: "subsys0",
 				SubSystemPath: "testsys/kernel/stats/subsys0",
@@ -90,7 +90,10 @@ func TestCreateStatsfsMetrics(t *testing.T) {
 			},
 		},
 	}
-	actual := otelstats.CreateStatsfsMetrics(statsfspath)
+	actual, err := otelstats.CreateStatsfsMetrics(statsfspath)
+	if err != nil {
+		t.Errorf("createStatsfsMetrics error: %v", err)
+	}
 
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("createStatsfsMetrics mismatch (-expected +actual):\n%s", diff)
