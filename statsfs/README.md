@@ -1,11 +1,11 @@
 ## Table of Contents
 
-1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-a-ubuntu18.04-vm)
+1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-ubuntu18.04vm)
 2. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
 3. [Notes](#notes)
 4. [Resources](#resources)
 
-## Buildi Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
+## Build Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
 
 1. `git clone https://github.com/esposem/linux.git`
 2. `git fetch origin statsfs-final` (Fetch the branch with example)
@@ -21,6 +21,8 @@ sudo apt-get install build-essential libncurses-dev bison flex libssl-dev libelf
 	- `make localmodconfig` (generate a config from the kernel options currently in use)
 	- `make menuconfig` (command line interface for config creation)
 	- `cp -v /boot/config-$(uname -r) .config` (copy the boot config of the host machine)
+   
+   Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
 7. Modify `.config` for statsfs example: set `CONFIG_NET_NS=n`
 8. Compile the Linux kernel using all available cpu threads: `make -j $(nproc)`
 9. Install the Linux kernel modules: `sudo make modules_install`
