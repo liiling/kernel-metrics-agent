@@ -3,7 +3,8 @@
 1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-ubuntu18.04vm)
 2. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
 3. [Notes](#notes)
-4. [Resources](#resources)
+4. [Create VM Instances in GCP with Nested Virtualization Support](#create-vm-instances-in-gcp-with-nested-virtualization-support)
+5. [Resources](#resources)
 
 ## Build Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
 
@@ -102,6 +103,34 @@ When ported to OpenTelemetry, the metric will appear with name `subsys0/metric0`
 
     In statsfs, the same metric for different devices in the same subsystem are spread across multiple files. 
     This implies that with the current design of the statsfs -> OpenTelemetry demo, exporting one metrics (along with the list of all associated labels) requires many file I/O operations.
+
+## Create VM Instances in GCP with Nested Virtualization Support
+
+The statsfs implementation is heavily inspired by the KVM code that exposes statistics to debugfs, and one of the main usage examples given by statsfs creators exposes KVM statistics. As such, it is useful to create VMs with KVM enabled for testing purposes.
+This project runs on GCP, [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances#tested_os_versions) is requried to start KVM.
+
+1. Create a boot disk from a public or custom image with an operating system.
+
+    a. Via gcloud: `gcloud compute disks create kvm-disk --image-project debian-cloud --image-family debian-9 --zone europe-west1-a`
+
+    b. Via GCP's _Disks_ web interface under _Compute Engine_
+
+2. Create a custom image with nested virtualization enabled:
+    ```
+    gcloud compute images create nested-vm-image \
+    --source-disk kvm-disk \
+    --source-disk-zone europe-west1-a \
+    --licenses https://compute.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx
+    ```
+
+3. Delete the source disk if it is no longer needed.
+4. Create a VM instance using the new custom image:
+    ```
+    gcloud compute instances create nested-vm --zone europe-west1-a \
+    --min-cpu-platform "Intel Haswell" \
+    --image nested-vm-image
+    ```
+5. SSH into the newly created VM instance and check nested virtualizaiton is enabled: `grep -cw vmx /proc/cpuinfo` should return non-zero.
 
 ## Notes
 
