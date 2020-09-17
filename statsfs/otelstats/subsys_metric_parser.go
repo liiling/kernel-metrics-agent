@@ -53,10 +53,11 @@ func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error
 		log.Printf("Failed to walk to file %v\n", path)
 	}
 
-	if !info.IsDir() {
-		m.updateMetricMapOneEntry(path)
+	if info.IsDir() {
+		return nil
 	}
-	return err
+	m.updateMetricMapOneEntry(path)
+	return nil
 }
 
 func (m *SubsysMetrics) updateMetricMapOneEntry(path string) {
