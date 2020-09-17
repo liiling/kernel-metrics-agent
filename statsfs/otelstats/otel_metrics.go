@@ -51,7 +51,7 @@ func createMetric(metricName string, metricInfo []MetricInfo) error {
 // CreateOtelMetricsForStatsfs creates a otel metric for every
 // metric found in the given statsfsPath
 func CreateOtelMetricsForStatsfs(statsfsPath string) error {
-	m, err := CreateStatsfsMetrics(statsfsPath)
+	m, err := NewStatsfsMetrics(statsfsPath)
 	if err != nil {
 		return fmt.Errorf("failed to create statsfs metrics for %v: %v", statsfsPath, err)
 	}
