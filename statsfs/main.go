@@ -26,5 +26,5 @@ func main() {
 		log.Panic(err)
 	}
 
-	select { }
+	select {}
 }

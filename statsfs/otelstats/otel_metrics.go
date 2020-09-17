@@ -27,9 +27,9 @@ func readMetricFromPath(metricPath string) (int64, error) {
 	return int64(data), nil
 }
 
-func createMetric(metricName string, metricInfo []MetricInfo) {
+func createMetric(metricName string, metricInfo []MetricInfo) error {
 	meter := global.MeterProvider().Meter("otel-stats")
-	metric.Must(meter).NewInt64ValueObserver(metricName,
+	_, err := meter.NewInt64ValueObserver(metricName,
 		func(_ context.Context, result metric.Int64ObserverResult) {
 			for _, info := range metricInfo {
 				val, err := readMetricFromPath(info.Path)
@@ -41,6 +41,11 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 		},
 		metric.WithDescription(metricName),
 	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create metric %v: %v", metricName, err)
+	}
+	return nil
 }
 
 // CreateOtelMetricsForStatsfs creates a otel metric for every
@@ -48,13 +53,16 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 func CreateOtelMetricsForStatsfs(statsfsPath string) error {
 	m, err := CreateStatsfsMetrics(statsfsPath)
 	if err != nil {
-		return fmt.Errorf("Failed to create statsfs metrics for %v: %v", statsfsPath, err)
+		return fmt.Errorf("failed to create statsfs metrics for %v: %v", statsfsPath, err)
 	}
 	m.Print()
 
 	for _, subsysMetrics := range m.Metrics {
 		for metricName, metricInfo := range subsysMetrics.Metrics {
-			createMetric(metricName, metricInfo)
+			err = createMetric(metricName, metricInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
