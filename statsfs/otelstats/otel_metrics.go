@@ -13,27 +13,6 @@ import (
 	"go.opentelemetry.io/otel/api/metric"
 )
 
-// InitOtelPipeline initializes an OpenTelemetry pipeline
-// that crawls a user defined path and exports all the available
-// stats to a backend of choice (gcp, stdout, prometheus)
-func InitOtelPipeline(exporterName, statsfsPath string) {
-	exporter, err := InitExporter(exporterName)
-	if err != nil {
-		log.Panicf("Failed to initialize exporter %v: %v\n", exporterName, err)
-	}
-	if exporter != nil {
-		defer exporter.Stop()
-	}
-
-	err = createOtelMetricsForStatsfs(statsfsPath)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	for {
-	}
-}
-
 func readMetricFromPath(metricPath string) int64 {
 	dataBytes, err := ioutil.ReadFile(metricPath)
 	if err != nil {
@@ -64,7 +43,9 @@ func createMetric(metricName string, metricInfo []MetricInfo) {
 	)
 }
 
-func createOtelMetricsForStatsfs(statsfsPath string) error {
+// CreateOtelMetricsForStatsfs creates a otel metric for every
+// metric found in the given statsfsPath
+func CreateOtelMetricsForStatsfs(statsfsPath string) error {
 	m, err := CreateStatsfsMetrics(statsfsPath)
 	if err != nil {
 		return fmt.Errorf("Failed to create statsfs metrics for %v: %v", statsfsPath, err)

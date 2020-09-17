@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"otelstats"
 )
 
@@ -12,5 +13,18 @@ var (
 
 func main() {
 	flag.Parse()
-	otelstats.InitOtelPipeline(*exporterName, *statsfsPath)
+	exporter, err := otelstats.InitExporter(*exporterName)
+	if err != nil {
+		log.Panicf("Failed to initialize exporter %v: %v\n", *exporterName, err)
+	}
+	if exporter != nil {
+		defer exporter.Stop()
+	}
+
+	err = otelstats.CreateOtelMetricsForStatsfs(*statsfsPath)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	select { }
 }
