@@ -35,8 +35,9 @@ func createMetric(metricName string, metricInfo []MetricInfo) error {
 				val, err := readMetricFromPath(info.Path)
 				if err != nil {
 					log.Printf("Error reading metric at %v: %v\n", info.Path, err)
+				} else {
+					result.Observe(val, kv.String("device", info.Label))
 				}
-				result.Observe(val, kv.String("device", info.Label))
 			}
 		},
 		metric.WithDescription(metricName),
