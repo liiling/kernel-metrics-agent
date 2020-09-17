@@ -14,23 +14,28 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/controller/push"
 )
 
+const (
+	prometheusPort = 2112
+	pullPeriod = 10 * time.Second
+	pushPeriod = 10 * time.Second
+)
+
 func initPrometheusExporter() error {
-	exporter, err := prometheus.InstallNewPipeline(prometheus.Config{}, pull.WithCachePeriod(time.Second*10))
+	exporter, err := prometheus.InstallNewPipeline(prometheus.Config{}, pull.WithCachePeriod(pullPeriod))
 	if err != nil {
 		return fmt.Errorf("Failed to initialize Prometheus metric exporter: %v", err)
 	}
 
-	port := 2112
 	http.HandleFunc("/metrics", exporter.ServeHTTP)
-	go http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	fmt.Printf("Prometheus server running on :%d\n", port)
+	go http.ListenAndServe(fmt.Sprintf(":%d", prometheusPort), nil)
+	fmt.Printf("Prometheus server running on :%d\n", prometheusPort)
 	global.SetMeterProvider(exporter.Provider())
 	return nil
 }
 
 func initStdoutExporter() (*push.Controller, error) {
 	exportOpts := []stdout.Option{stdout.WithPrettyPrint()}
-	pushOpts := []push.Option{push.WithPeriod(time.Second * 10)}
+	pushOpts := []push.Option{push.WithPeriod(pushPeriod)}
 	_, exporter, err := stdout.NewExportPipeline(
 		exportOpts,
 		pushOpts,
@@ -45,7 +50,7 @@ func initStdoutExporter() (*push.Controller, error) {
 func initGCPExporter() (*push.Controller, error) {
 	opts := []mexporter.Option{}
 	// Minimum interval for GCP exporter is 10s
-	exporter, err := mexporter.NewExportPipeline(opts, push.WithPeriod(time.Second*10))
+	exporter, err := mexporter.NewExportPipeline(opts, push.WithPeriod(pushPeriod))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize GCP metric exporter: %v", err)
 	}
@@ -58,8 +63,7 @@ func initGCPExporter() (*push.Controller, error) {
 func InitExporter(exporterName string) (*push.Controller, error) {
 	switch exporterName {
 	case "prometheus":
-		err := initPrometheusExporter()
-		return nil, err
+		return nil, initPrometheusExporter()
 	case "stdout":
 		return initStdoutExporter()
 	case "gcp":
