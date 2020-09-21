@@ -30,39 +30,31 @@ type SubsysMetrics struct {
 
 // newSubsysMetric creates a SubsysMetric struct given the mounting
 // point of statsfs filesystem (statsfsPath) and the subsystemName
-func newSubsysMetric(statsfsPath, subsystemName string) SubsysMetrics {
-	subsysMetrics := SubsysMetrics{
+func newSubsysMetric(statsfsPath, subsystemName string) (*SubsysMetrics, error) {
+	m := SubsysMetrics{
 		StatsfsPath:   statsfsPath,
 		SubSystemName: subsystemName,
 		SubSystemPath: strings.Join([]string{statsfsPath, subsystemName}, "/"),
 		Metrics:       make(map[string][]MetricInfo),
 	}
-	subsysMetrics.constructMetricMap()
-	return subsysMetrics
-}
 
-func (m *SubsysMetrics) constructMetricMap() {
-	err := filepath.Walk(m.SubSystemPath, m.updateMetricMap)
-	if err != nil {
-		log.Printf("Failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath)
+	if err := filepath.Walk(m.SubSystemPath, m.updateMetricMap); err != nil {
+		return nil, fmt.Errorf("failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath)
 	}
+	return &m, nil
 }
 
 func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error) error {
 	if err != nil {
-		log.Printf("Failed to walk to file %v\n", path)
+		return fmt.Errorf("failed to walk to file %v", path)
 	}
 
 	if info.IsDir() {
 		return nil
 	}
-	m.updateMetricMapOneEntry(path)
-	return nil
-}
-
-func (m *SubsysMetrics) updateMetricMapOneEntry(path string) {
 	metricInfo := m.getMetricInfo(path)
 	m.Metrics[metricInfo.Name] = append(m.Metrics[metricInfo.Name], metricInfo)
+	return nil
 }
 
 // Given a path to a statsfs file, return a MetricInfo struct with label
@@ -140,7 +132,11 @@ func NewStatsfsMetrics(statsfsPath string) (*StatsfsMetrics, error) {
 	}
 
 	for _, subsystemName := range subsystemNames {
-		metrics.Metrics[subsystemName] = newSubsysMetric(statsfsPath, subsystemName)
+		if subsysMetric, err := newSubsysMetric(statsfsPath, subsystemName); err != nil {
+			log.Printf("failed to generate metrics for subsystem %v\n", subsystemName)
+		} else {
+			metrics.Metrics[subsystemName] = *subsysMetric
+		}
 	}
 	return &metrics, nil
 }

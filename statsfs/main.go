@@ -21,10 +21,11 @@ func main() {
 		defer exporter.Stop()
 	}
 
-	err = otelstats.CreateOtelMetricsForStatsfs(*statsfsPath)
-	if err != nil {
+	if err = otelstats.CreateOtelMetricsForStatsfs(*statsfsPath); err != nil {
 		log.Panic(err)
 	}
 
+	// block forever since the exporter is pulling/pushing metrics periodically
+	// in a separate goroutine
 	select {}
 }

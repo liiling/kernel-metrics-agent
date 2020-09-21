@@ -13,6 +13,8 @@ import (
 	"go.opentelemetry.io/otel/api/metric"
 )
 
+const meterName = "otel-stats"
+
 func readMetricFromPath(metricPath string) (int64, error) {
 	dataBytes, err := ioutil.ReadFile(metricPath)
 	if err != nil {
@@ -28,12 +30,11 @@ func readMetricFromPath(metricPath string) (int64, error) {
 }
 
 func createMetric(metricName string, metricInfo []MetricInfo) error {
-	meter := global.MeterProvider().Meter("otel-stats")
+	meter := global.MeterProvider().Meter(meterName)
 	_, err := meter.NewInt64ValueObserver(metricName,
 		func(_ context.Context, result metric.Int64ObserverResult) {
 			for _, info := range metricInfo {
-				val, err := readMetricFromPath(info.Path)
-				if err != nil {
+				if val, err := readMetricFromPath(info.Path); err != nil {
 					log.Printf("Error reading metric at %v: %v\n", info.Path, err)
 				} else {
 					result.Observe(val, kv.String("device", info.Label))
@@ -60,8 +61,7 @@ func CreateOtelMetricsForStatsfs(statsfsPath string) error {
 
 	for _, subsysMetrics := range m.Metrics {
 		for metricName, metricInfo := range subsysMetrics.Metrics {
-			err = createMetric(metricName, metricInfo)
-			if err != nil {
+			if err := createMetric(metricName, metricInfo); err != nil {
 				return err
 			}
 		}
