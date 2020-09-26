@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: otel-prometheus
+    scrape_interval: 1s
+    static_configs:
+      # scrape port 8889 in the host named "otel-agent" (service defined in docker-compose)
+      - targets: ['otel-agent:8889']
