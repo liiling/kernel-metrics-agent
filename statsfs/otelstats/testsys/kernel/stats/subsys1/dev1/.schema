@@ -1,0 +1,13 @@
+LABEL
+subsystem device
+subsys1 dev1
+
+METRIC in_all_m
+FLAG CUMULATIVE
+TYPE INT
+DESC a metric found in all devices under subsystem subsys1 and directly under subsys1
+
+METRIC in_both_devs_m
+FLAG CUMULATIVE
+TYPE INT
+DESC a metric found in both devices dev0 and dev1 under subsystem subsys1
