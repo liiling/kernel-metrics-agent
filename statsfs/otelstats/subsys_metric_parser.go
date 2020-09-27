@@ -59,12 +59,13 @@ func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error
 			return fmt.Errorf("failed to parse .schema file at %v", path)
 		} else {
 			for _, metricSchema := range metricSchemas {
+				metricName := filepath.Join(m.SubSystemName, metricSchema.mname)
 				metricPath := filepath.Join(dirname, metricSchema.mname)
 				// update metric schema
-				if schema, ok := m.Metrics[metricSchema.mname]; ok {
+				if schema, ok := m.Metrics[metricName]; ok {
 					schema.PathToLabel[metricPath] = metricSchema.mlabels
 				} else {
-					m.Metrics[metricSchema.mname] = MetricInfo{
+					m.Metrics[metricName] = MetricInfo{
 						Name:        metricSchema.mname,
 						Flag:        metricSchema.mflag,
 						Type:        metricSchema.mtype,
