@@ -48,7 +48,7 @@ type metricLabel struct {
 // ParseSchema parses a statsfs .schema file
 // returns a map with key = metric name and
 // value = metricSchema
-func parseSchema(path string) ([]metricSchema, error) {
+func parseSchema(path string) ([]*metricSchema, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open .schema file at %v", path)
@@ -57,7 +57,7 @@ func parseSchema(path string) ([]metricSchema, error) {
 	scanner := bufio.NewScanner(file)
 
 	labels := []metricLabel{}
-	metrics := []metricSchema{}
+	metrics := []*metricSchema{}
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -71,30 +71,17 @@ func parseSchema(path string) ([]metricSchema, error) {
 			if m, err := parseMetric(scanner); err != nil {
 				return nil, fmt.Errorf("failed to parse schema at %s: %s", path, err)
 			} else {
-				metrics = append(metrics, *m)
+				metrics = append(metrics, m)
 			}
 		case "":
 			continue
 		}
 	}
 
-	fmt.Printf("-------------------------------------\n")
-	fmt.Printf(".schema file at %v\n", path)
-	fmt.Printf("Prior to label update: metric = %v\n\n", metrics)
-
-	fmt.Printf("Update labels...\n")
 	// apply labels to all metrics listed in the .schema file
 	for _, m := range metrics {
 		m.mlabels = labels
-		fmt.Printf("m = %v, m.mlabels: %v\n", m, m.mlabels)
 	}
-
-	fmt.Printf("\nAfter label update:\n")
-	for _, m := range metrics {
-		fmt.Printf("m = %v, m.mlabels: %v\n", m, m.mlabels)
-	}
-	fmt.Printf("-------------------------------------\n")
-
 	return metrics, nil
 }
 

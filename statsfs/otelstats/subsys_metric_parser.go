@@ -58,12 +58,10 @@ func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error
 		if metricSchemas, err := parseSchema(path); err != nil {
 			return fmt.Errorf("failed to parse .schema file at %v", path)
 		} else {
-			fmt.Printf("schema: %v\n", metricSchemas)
 			for _, metricSchema := range metricSchemas {
 				metricPath := filepath.Join(dirname, metricSchema.mname)
 				// update metric schema
 				if schema, ok := m.Metrics[metricSchema.mname]; ok {
-					fmt.Printf("labels: %v\n", metricSchema.mlabels)
 					schema.PathToLabel[metricPath] = metricSchema.mlabels
 				} else {
 					m.Metrics[metricSchema.mname] = MetricInfo{
@@ -87,10 +85,10 @@ func (m *SubsysMetrics) print() {
 	fmt.Println("Metrics:")
 	for metricName, info := range m.Metrics {
 		fmt.Printf("\tmetric: %v\n", metricName)
-		fmt.Printf("\t\tname: %v, flag: %v, type: %v, desc: %v\n", info.Name, info.Flag, info.Type, info.Desc)
+		fmt.Printf("\t\tname: %v,\n\t\tflag: %v, \n\t\ttype: %v, \n\t\tdesc: %v\n", info.Name, info.Flag, info.Type, info.Desc)
 		fmt.Printf("\t\tPath to labels:\n")
 		for path, labels := range info.PathToLabel {
-			fmt.Printf("\t\t\tpath: %v, labels: %p\t\n", path, labels)
+			fmt.Printf("\t\t\tpath: %v, labels: %v\t\n", path, labels)
 		}
 	}
 }
