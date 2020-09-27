@@ -24,13 +24,13 @@ type SubsysMetrics struct {
 // MetricInfo is a struct that represents a metric from a subsystem.
 // A metric contains name, flag (CUMULATIVE or GAUGE), type (INT or FLAT),
 // description and a map with key = path to the metric file, value =
-// the associated list of metricLabels
+// the associated list of MetricLabels
 type MetricInfo struct {
 	Name        string
 	Flag        string
 	Type        string
 	Desc        string
-	PathToLabel map[string][]metricLabel
+	PathToLabel map[string][]MetricLabel
 }
 
 // newSubsysMetric creates a SubsysMetric struct given the mounting
@@ -70,7 +70,7 @@ func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error
 						Flag:        metricSchema.mflag,
 						Type:        metricSchema.mtype,
 						Desc:        metricSchema.mdesc,
-						PathToLabel: map[string][]metricLabel{metricPath: metricSchema.mlabels},
+						PathToLabel: map[string][]MetricLabel{metricPath: metricSchema.mlabels},
 					}
 				}
 			}

@@ -34,15 +34,16 @@ const (
 // Desc = description of the metric
 type metricSchema struct {
 	mname   string
-	mlabels []metricLabel
+	mlabels []MetricLabel
 	mflag   string
 	mtype   string
 	mdesc   string
 }
 
-type metricLabel struct {
-	key   string
-	value string
+// MetricLabel contains label information for metrics extracted from .schema file
+type MetricLabel struct {
+	Key   string
+	Value string
 }
 
 // ParseSchema parses a statsfs .schema file
@@ -56,7 +57,7 @@ func parseSchema(path string) ([]*metricSchema, error) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	labels := []metricLabel{}
+	labels := []MetricLabel{}
 	metrics := []*metricSchema{}
 
 	for scanner.Scan() {
@@ -90,8 +91,8 @@ func parseSchema(path string) ([]*metricSchema, error) {
 // <label_key> ::= <strset>+
 // <label_value> ::= <strset>+
 // <strset> ::= [A-Za-z_0-9]
-func parseLabels(scanner *bufio.Scanner) ([]metricLabel, error) {
-	labels := []metricLabel{}
+func parseLabels(scanner *bufio.Scanner) ([]MetricLabel, error) {
+	labels := []MetricLabel{}
 
 	for scanner.Scan() {
 		if line := scanner.Text(); line == "" {
@@ -102,7 +103,7 @@ func parseLabels(scanner *bufio.Scanner) ([]metricLabel, error) {
 			if len(words) != 2 {
 				return nil, fmt.Errorf("syntax error in <labels> section")
 			}
-			labels = append(labels, metricLabel{key: words[0], value: words[1]})
+			labels = append(labels, MetricLabel{Key: words[0], Value: words[1]})
 		}
 	}
 	return labels, nil

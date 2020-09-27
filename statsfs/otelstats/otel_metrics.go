@@ -114,10 +114,10 @@ func createFloatMetric(metricName string, metricInfo MetricInfo) error {
 	return nil
 }
 
-func metricLabelToOtel(metricLabels []metricLabel) []kv.KeyValue {
+func metricLabelToOtel(metricLabels []MetricLabel) []kv.KeyValue {
 	labels := []kv.KeyValue{}
 	for _, mLabel := range metricLabels {
-		labels = append(labels, kv.String(mLabel.key, mLabel.value))
+		labels = append(labels, kv.String(mLabel.Key, mLabel.Value))
 	}
 	return labels
 }
