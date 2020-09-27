@@ -17,7 +17,7 @@ func TestCreateStatsfsMetrics(t *testing.T) {
 				SubSystemName: "subsys0",
 				SubSystemPath: "testsys/kernel/stats/subsys0",
 				Metrics: map[string][]otelstats.MetricInfo{
-					"subsys0/m0": []otelstats.MetricInfo{
+					"subsys0/m0": {
 						otelstats.MetricInfo{
 							Name:  "subsys0/m0",
 							Label: "/dev0",
@@ -29,7 +29,7 @@ func TestCreateStatsfsMetrics(t *testing.T) {
 							Path:  "testsys/kernel/stats/subsys0/dev1/m0",
 						},
 					},
-					"subsys0/m1": []otelstats.MetricInfo{
+					"subsys0/m1": {
 						otelstats.MetricInfo{
 							Name:  "subsys0/m1",
 							Label: "/dev0",
@@ -38,7 +38,7 @@ func TestCreateStatsfsMetrics(t *testing.T) {
 					},
 				},
 			},
-			"subsys1": otelstats.SubsysMetrics{
+			"subsys1": {
 				StatsfsPath:   statsfspath,
 				SubSystemName: "subsys1",
 				SubSystemPath: "testsys/kernel/stats/subsys1",

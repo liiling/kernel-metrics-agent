@@ -8,24 +8,29 @@ import (
 	"strings"
 )
 
-// MetricInfo contains a Label used to identify the specific device
-// and a Path from where the metric for this device could be retrieved
-type MetricInfo struct {
-	Name  string
-	Label string
-	Path  string
-}
+const schemaFilename = ".schema"
 
 // SubsysMetrics is a struct that represents metrics of a subsystem.
-// Path gives the base path to the subsystem's stats in statsfs
+// SubsystemPath gives the base path to the subsystem's stats in statsfs
 // (usually /sys/kernel/stats/subsystemName), Metrics is a map with key
-// being the metric name, and value being a list of labels (devices with
-// the metric registered)
+// being the metric name, and value being the associated MetricInfo
 type SubsysMetrics struct {
 	StatsfsPath   string
 	SubSystemName string
 	SubSystemPath string
-	Metrics       map[string][]MetricInfo
+	Metrics       map[string]MetricInfo
+}
+
+// MetricInfo is a struct that represents a metric from a subsystem.
+// A metric contains name, flag (CUMULATIVE or GAUGE), type (INT or FLAT),
+// description and a map with key = path to the metric file, value =
+// the associated list of metricLabels
+type MetricInfo struct {
+	Name        string
+	Flag        string
+	Type        string
+	Desc        string
+	PathToLabel map[string][]metricLabel
 }
 
 // newSubsysMetric creates a SubsysMetric struct given the mounting
@@ -35,11 +40,11 @@ func newSubsysMetric(statsfsPath, subsystemName string) (*SubsysMetrics, error) 
 		StatsfsPath:   statsfsPath,
 		SubSystemName: subsystemName,
 		SubSystemPath: strings.Join([]string{statsfsPath, subsystemName}, "/"),
-		Metrics:       make(map[string][]MetricInfo),
+		Metrics:       make(map[string]MetricInfo),
 	}
 
 	if err := filepath.Walk(m.SubSystemPath, m.updateMetricMap); err != nil {
-		return nil, fmt.Errorf("failed to parse metrics for subsystem %v at %v", m.SubSystemName, m.SubSystemPath)
+		return nil, fmt.Errorf("failed to parse metrics for subsystem %v at %v: %v", m.SubSystemName, m.SubSystemPath, err)
 	}
 	return &m, nil
 }
@@ -49,47 +54,30 @@ func (m *SubsysMetrics) updateMetricMap(path string, info os.FileInfo, err error
 		return fmt.Errorf("failed to walk to file %v", path)
 	}
 
-	if info.IsDir() {
-		return nil
+	if dirname, filename := filepath.Split(path); filename == schemaFilename {
+		if metricSchemas, err := parseSchema(path); err != nil {
+			return fmt.Errorf("failed to parse .schema file at %v", path)
+		} else {
+			fmt.Printf("schema: %v\n", metricSchemas)
+			for _, metricSchema := range metricSchemas {
+				metricPath := filepath.Join(dirname, metricSchema.mname)
+				// update metric schema
+				if schema, ok := m.Metrics[metricSchema.mname]; ok {
+					fmt.Printf("labels: %v\n", metricSchema.mlabels)
+					schema.PathToLabel[metricPath] = metricSchema.mlabels
+				} else {
+					m.Metrics[metricSchema.mname] = MetricInfo{
+						Name:        metricSchema.mname,
+						Flag:        metricSchema.mflag,
+						Type:        metricSchema.mtype,
+						Desc:        metricSchema.mdesc,
+						PathToLabel: map[string][]metricLabel{metricPath: metricSchema.mlabels},
+					}
+				}
+			}
+		}
 	}
-	metricInfo := m.getMetricInfo(path)
-	m.Metrics[metricInfo.Name] = append(m.Metrics[metricInfo.Name], metricInfo)
 	return nil
-}
-
-// Given a path to a statsfs file, return a MetricInfo struct with label
-// computed by getMetricLabel method and Path being the input path
-// (the path from where the metric could be retrieved)
-// Example:
-//	Input:
-//		m.SubSystemPath = /sys/kernel/stats/net
-//		path = /sys/kernel/stats/net/eth0/sub0/latency
-//	Output:
-//		MetricInfo{
-//			Name: net/latency
-//			Label: /eth0/sub0
-//			Path: /sys/kernel/stats/net/eth0/sub0/latency
-//		}
-func (m *SubsysMetrics) getMetricInfo(path string) MetricInfo {
-	return MetricInfo{
-		Name:  m.getMetricName(path),
-		Label: m.getMetricLabel(path),
-		Path:  path,
-	}
-}
-
-func (m *SubsysMetrics) getMetricName(path string) string {
-	segs := strings.Split(path, "/")
-	metricFileName := segs[len(segs)-1]
-	metricName := strings.Join([]string{m.SubSystemName, metricFileName}, "/")
-	return metricName
-}
-
-func (m *SubsysMetrics) getMetricLabel(path string) string {
-	metricStr := strings.Split(path, m.SubSystemPath)[1]
-	labelSeg := strings.Split(metricStr, "/")
-	label := strings.Join(labelSeg[:len(labelSeg)-1], "/")
-	return label
 }
 
 func (m *SubsysMetrics) print() {
@@ -97,10 +85,12 @@ func (m *SubsysMetrics) print() {
 	fmt.Printf("SubSystemName: %v\n", m.SubSystemName)
 	fmt.Printf("SubSystemPath: %v\n", m.SubSystemPath)
 	fmt.Println("Metrics:")
-	for metricName, labels := range m.Metrics {
-		fmt.Printf("\tmetricName: %v,\n\tinfo: \n", metricName)
-		for _, label := range labels {
-			fmt.Printf("\t\tLabel: %v, Path: %v\n", label.Label, label.Path)
+	for metricName, info := range m.Metrics {
+		fmt.Printf("\tmetric: %v\n", metricName)
+		fmt.Printf("\t\tname: %v, flag: %v, type: %v, desc: %v\n", info.Name, info.Flag, info.Type, info.Desc)
+		fmt.Printf("\t\tPath to labels:\n")
+		for path, labels := range info.PathToLabel {
+			fmt.Printf("\t\t\tpath: %v, labels: %p\t\n", path, labels)
 		}
 	}
 }
@@ -133,7 +123,7 @@ func NewStatsfsMetrics(statsfsPath string) (*StatsfsMetrics, error) {
 
 	for _, subsystemName := range subsystemNames {
 		if subsysMetric, err := newSubsysMetric(statsfsPath, subsystemName); err != nil {
-			log.Printf("failed to generate metrics for subsystem %v\n", subsystemName)
+			log.Printf("failed to generate metrics for subsystem %v: %v\n", subsystemName, err)
 		} else {
 			metrics.Metrics[subsystemName] = *subsysMetric
 		}
