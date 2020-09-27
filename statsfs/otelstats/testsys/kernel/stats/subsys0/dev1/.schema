@@ -1,8 +1,9 @@
 LABEL
-subsystem device
-subsys0 dev1
+subsystem subsys0 
+device dev1
 
-METRIC m0
+METRIC
+NAME m0
 FLAG GAUGE
 TYPE FLOAT
 DESC metric m0
