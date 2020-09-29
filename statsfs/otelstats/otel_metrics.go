@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/kv"
+	"go.opentelemetry.io/otel/label"
 	"go.opentelemetry.io/otel/api/metric"
 )
 
@@ -114,10 +114,10 @@ func createFloatMetric(metricName string, metricInfo MetricInfo) error {
 	return nil
 }
 
-func metricLabelToOtel(metricLabels []MetricLabel) []kv.KeyValue {
-	labels := []kv.KeyValue{}
+func metricLabelToOtel(metricLabels []MetricLabel) []label.KeyValue {
+	labels := []label.KeyValue{}
 	for _, mLabel := range metricLabels {
-		labels = append(labels, kv.String(mLabel.Key, mLabel.Value))
+		labels = append(labels, label.String(mLabel.Key, mLabel.Value))
 	}
 	return labels
 }
