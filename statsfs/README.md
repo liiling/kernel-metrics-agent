@@ -109,7 +109,9 @@ When ported to OpenTelemetry, the metric will appear with name `subsys0/metric0`
 The statsfs implementation is heavily inspired by the KVM code that exposes statistics to debugfs, and one of the main usage examples given by statsfs creators exposes KVM statistics. As such, it is useful to create VMs with KVM enabled for testing purposes.
 This project runs on GCP, [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances#tested_os_versions) is requried to start KVM.
 
-1. Create a boot disk from a public or custom image with an operating system.
+0. Install [`gcloud` tools](https://cloud.google.com/compute/docs/gcloud-compute) and configure accordingly
+
+1. Create a boot disk from a public or custom image with an operating system. For the list of public images: `gcloud compute images list`
 
     a. Via gcloud: `gcloud compute disks create kvm-disk --image-project debian-cloud --image-family debian-9 --zone europe-west1-a`
 
