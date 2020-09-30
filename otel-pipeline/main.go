@@ -119,6 +119,5 @@ func main() {
 	createIntValueObserver("visit-observer",
 		"A value observer representing number of times a website is visited.")
 
-	for {
-	}
+	select {}
 }
