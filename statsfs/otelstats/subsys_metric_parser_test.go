@@ -1,7 +1,8 @@
 package otelstats_test
 
 import (
-	"otelstats"
+	"github.com/liiling/kernel-metrics-agent/statsfs/otelstats"
+
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
