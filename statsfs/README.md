@@ -65,9 +65,9 @@ Originally from https://github.com/esposem/linux, now at https://github.com/liil
 1. After reboot, check that statsfs is supported in the running Linux kernel:
     - check Linux kernel version: `uname -mrs`
     - check statsfs filesystem is supported: `cat /proc/filesystems | grep statsfs`
-1. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/stats`
+1. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/statsfs`
 1. Check statsfs is mounted: `cat /proc/mounts | grep stats`
-1. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/stats`
+1. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/statsfs`
 
 The `statsfs` branch on `liiling/linux` includes a Kernel config, so this is not required:
 
