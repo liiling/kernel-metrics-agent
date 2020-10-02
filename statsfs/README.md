@@ -1,10 +1,9 @@
 ## Table of Contents
 
-1. [Create VM Instances in GCP with Nested Virtualization Support](#create-vm-instances-in-gcp-with-nested-virtualization-support)
 1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-ubuntu18.04vm)
-1. [Install the user-space agent](#install-the-user-space-agent)
 1. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
 1. [Notes](#notes)
+1. [Create VM Instances in GCP with Nested Virtualization Support](#create-vm-instances-in-gcp-with-nested-virtualization-support)
 1. [Resources](#resources)
 
 ## Create VM Instances in GCP with Nested Virtualization Support
@@ -31,14 +30,13 @@ This project runs on GCP, [enabling nested virtualization](https://cloud.google.
     gcloud compute disks delete kvm-disk --zone europe-west1-c
     ```
     
-1. Create a VM instance using the new custom image - note how we're using 16 (!) vCPUs, for a very fast Kernel build:
-
+1. Create a VM instance using the new custom image:
     ```
     gcloud compute instances create nested-vm --zone europe-west1-c \
     --min-cpu-platform "Intel Haswell" \
-    --machine-type=n1-standard-16 \
     --image nested-vm-image
-    ```   
+    ```
+    
 1. SSH into the newly created VM instance and check nested virtualizaiton is enabled:
     ```
     gcloud beta compute ssh --zone "europe-west1-c" "nested-vm" --project "open-kernel-monitoring"
@@ -49,41 +47,42 @@ This project runs on GCP, [enabling nested virtualization](https://cloud.google.
 
 ## Build Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
 
-Originally from https://github.com/esposem/linux, now at https://github.com/liiling/linux:
+1. `git clone https://github.com/esposem/linux.git`
+2. `git fetch origin statsfs-final` (Fetch the branch with example)
+3. `git checkout statsfs-final`
+4. Install compilers and other tools
 
-1. `sudo apt install -y --fix-missing git build-essential libncurses-dev bison flex libssl-dev libelf-dev bc`
-1. `git clone https://github.com/liiling/linux.git ; cd linux`
-1. `git checkout statsfs`
+```bash
+sudo apt-get install build-essential libncurses-dev bison flex libssl-dev libelf-dev
+```
 
-1. Compile the Linux kernel using all available cpu threads: `time make -j $(nproc)`
-1. Install the Linux kernel modules: `sudo make modules_install`
-1. Install the Linux kernel: `sudo make install`. The following files are installed to the `/boot` directory, and the grub configuration is updated.
-    - config-5.7.0-rc2+
-    - System.map-5.7.0-rc2+
-    - vmlinuz-5.7.0-rc2+
-1. Reboot the VM: `reboot`
-1. After reboot, check that statsfs is supported in the running Linux kernel:
-    - check Linux kernel version: `uname -mrs`
-    - check statsfs filesystem is supported: `cat /proc/filesystems | grep statsfs`
-1. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/stats`
-1. Check statsfs is mounted: `cat /proc/mounts | grep stats`
-1. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/stats`
-
-The `statsfs` branch on `liiling/linux` includes a Kernel config, so this is not required:
-
-1. Clean the kernel tree: `make mrproper`
-1. Generate `.config` file. Some possible alternatives:
+5. Clean the kernel tree: `make mrproper`
+6. Generate `.config` file. Some possible alternatives:
 	- `make localmodconfig` (generate a config from the kernel options currently in use)
 	- `make menuconfig` (command line interface for config creation)
 	- `cp -v /boot/config-$(uname -r) .config` (copy the boot config of the host machine)
    
-Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
+   Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
+7. Modify `.config` for statsfs example: set `CONFIG_NET_NS=n`
+8. Compile the Linux kernel using all available cpu threads: `make -j $(nproc)`
+9. Install the Linux kernel modules: `sudo make modules_install`
+10. Install the Linux kernel: `sudo make install`. The following files are installed to the `/boot` directory, and the grub configuration is updated.
+    - config-5.7.0-rc2+
+    - System.map-5.7.0-rc2+
+    - vmlinuz-5.7.0-rc2+
+11. Reboot the VM: `reboot`
+12. After reboot, check that statsfs is supported in the running Linux kernel:
+    - check Linux kernel version: `uname -mrs`
+    - check statsfs filesystem is supported: `cat /proc/filesystems | grep statsfs`
+13. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/stats`
+14. Check statsfs is mounted: `cat /proc/mounts | grep stats`
+15. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/stats`
 
 ## Install the user-space agent
 
 ### Install Golang
-1. `curl -L https://golang.org/dl/go1.15.2.src.tar.gz > go1.15.2.src.tar.gz`
-2. Might require `sudo`: `tar -C /usr/local -xzf go1.15.2.src.tar.gz`
+1. `curl -L https://golang.org/dl/go1.15.2.linux-amd64.tar.gz > go1.15.2.tar.gz`
+2. Might require `sudo tar -C /usr/local -xzf go1.15.2.tar.gz`
 3. `export PATH=$PATH:/usr/local/go/bin`
 
 ### Pull the agent from Git and running it
@@ -91,7 +90,7 @@ Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_
 2. `cd kernel-metrics-agent`
 3. `git checkout statsfs-metadata`
 4. `cd statsfs`
-5. Symlink otelstats to GOROOT directory (since it is not published as a Go package)...`ln -s /home/your-username/kernel-metrics-agent/statsfs/otelstats /usr/local/go/src/otelstats`
+5. Symlink otelstats to GOROOT directory (since it is not published as a Go package)...`sudo ln -s /home/YOUR-USERNAME/kernel-metrics-agent/statsfs/otelstats /usr/local/go/src/otelstats`
 6. `go run main.go -exporter gcp -statsfspath /sys/kernel/statsfs`
 7. Check metrics in Google Cloud Platform's monitoring page
 
