@@ -1,10 +1,11 @@
 ## Table of Contents
 
+1. [Create VM Instances in GCP with Nested Virtualization Support](#create-vm-instances-in-gcp-with-nested-virtualization-support)
 1. [Build Linux Kernel with Statsfs Patch on a Ubuntu18.04 VM](#build-linux-kernel-with-statsfs-patch-on-ubuntu18.04vm)
-2. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
-3. [Notes](#notes)
-4. [Create VM Instances in GCP with Nested Virtualization Support](#create-vm-instances-in-gcp-with-nested-virtualization-support)
-5. [Resources](#resources)
+1. [Install the user-space agent](#install-the-user-space-agent)
+1. [Instrument Statsfs with OpenTelemetry](#instrument-statsfs-with-opentelemetry)
+1. [Notes](#notes)
+1. [Resources](#resources)
 
 ## Create VM Instances in GCP with Nested Virtualization Support
 
@@ -17,7 +18,7 @@ This project runs on GCP, [enabling nested virtualization](https://cloud.google.
 
     b. Via GCP's _Disks_ web interface under _Compute Engine_
 
-2. Create a custom image with nested virtualization enabled:
+1. Create a custom image with nested virtualization enabled:
     ```
     gcloud compute images create nested-vm-image \
     --source-disk kvm-disk \
@@ -25,20 +26,20 @@ This project runs on GCP, [enabling nested virtualization](https://cloud.google.
     --licenses https://compute.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx
     ```
 
-3. Delete the source disk if it is no longer needed:
+1. Delete the source disk if it is no longer needed:
     ```
     gcloud compute disks delete kvm-disk --zone europe-west1-c
     ```
     
-4. Create a VM instance using the new custom image - note how we're using 64 (!) vCPUs, for a very fast Kernel build:
+1. Create a VM instance using the new custom image - note how we're using 16 (!) vCPUs, for a very fast Kernel build:
+
     ```
     gcloud compute instances create nested-vm --zone europe-west1-c \
     --min-cpu-platform "Intel Haswell" \
     --machine-type=n1-standard-16 \
     --image nested-vm-image
-    ```
-
-5. SSH into the newly created VM instance and check nested virtualizaiton is enabled:
+    ```   
+1. SSH into the newly created VM instance and check nested virtualizaiton is enabled:
     ```
     gcloud beta compute ssh --zone "europe-west1-c" "nested-vm" --project "open-kernel-monitoring"
     grep -cw vmx /proc/cpuinfo
@@ -78,6 +79,21 @@ The `statsfs` branch on `liiling/linux` includes a Kernel config, so this is not
    
 Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
 
+## Install the user-space agent
+
+### Install Golang
+1. `curl -L https://golang.org/dl/go1.15.2.src.tar.gz > go1.15.2.src.tar.gz`
+2. Might require `sudo`: `tar -C /usr/local -xzf go1.15.2.src.tar.gz`
+3. `export PATH=$PATH:/usr/local/go/bin`
+
+### Pull the agent from Git and running it
+1. `git clone https://github.com/liiling/kernel-metrics-agent.git`
+2. `cd kernel-metrics-agent`
+3. `git checkout statsfs-metadata`
+4. `cd statsfs`
+5. Symlink otelstats to GOROOT directory (since it is not published as a Go package)...`ln -s /home/your-username/kernel-metrics-agent/statsfs/otelstats /usr/local/go/src/otelstats`
+6. `go run main.go -exporter gcp -statsfspath /sys/kernel/statsfs`
+7. Check metrics in Google Cloud Platform's monitoring page
 
 ## Instrument Statsfs with OpenTelemetry
 
