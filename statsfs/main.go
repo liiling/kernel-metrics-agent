@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log"
-	"otelstats"
+	"github.com/liiling/kernel-metrics-agent/statsfs/otelstats"
 )
 
 var (

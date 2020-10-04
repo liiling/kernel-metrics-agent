@@ -39,8 +39,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/sketches-go v0.0.1 h1:RtG+76WKgZuz6FIaGsjoPePmadDBkuD/KC6+ZWu78b8=
 github.com/DataDog/sketches-go v0.0.1/go.mod h1:Q5DbzQ+3AkgGwymQO7aZFNP7ns2lZKGtvRBzRXfdi60=
-github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.11.0 h1:AH8DyPz9UWc8JIe5GYdx3L3ZCYt4vgSSSRA12ELtgS0=
-github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.11.0/go.mod h1:1wihvjo7cEtTWwV4S5IyAlr9Wee2pakFxesFdagFSXM=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.11.1-0.20200918040108-45880ec6f71f h1:r8w4aOgqtGPdSiYV7TKHcO542w4MtXtZrJ/FtvxmauQ=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.11.1-0.20200918040108-45880ec6f71f/go.mod h1:1wihvjo7cEtTWwV4S5IyAlr9Wee2pakFxesFdagFSXM=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=

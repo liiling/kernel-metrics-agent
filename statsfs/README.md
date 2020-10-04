@@ -48,51 +48,61 @@ This project runs on GCP, [enabling nested virtualization](https://cloud.google.
 ## Build Linux Kernel with Statsfs Patch on Ubuntu18.04VM 
 
 1. `git clone https://github.com/esposem/linux.git`
-2. `git fetch origin statsfs-final` (Fetch the branch with example)
-3. `git checkout statsfs-final`
-4. Install compilers and other tools
+1. `git fetch origin statsfs-final` (Fetch the branch with example)
+1. `git checkout statsfs-final`
+1. Install compilers and other tools
 
 ```bash
 sudo apt-get install build-essential libncurses-dev bison flex libssl-dev libelf-dev
 ```
 
-5. Clean the kernel tree: `make mrproper`
-6. Generate `.config` file. Some possible alternatives:
+1. Clean the kernel tree: `make mrproper`
+1. Generate `.config` file. Some possible alternatives:
 	- `make localmodconfig` (generate a config from the kernel options currently in use)
 	- `make menuconfig` (command line interface for config creation)
 	- `cp -v /boot/config-$(uname -r) .config` (copy the boot config of the host machine)
    
    Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
-7. Modify `.config` for statsfs example: set `CONFIG_NET_NS=n`
-8. Compile the Linux kernel using all available cpu threads: `make -j $(nproc)`
-9. Install the Linux kernel modules: `sudo make modules_install`
-10. Install the Linux kernel: `sudo make install`. The following files are installed to the `/boot` directory, and the grub configuration is updated.
+1. Modify `.config` for statsfs example: set `CONFIG_NET_NS=n`
+1. Compile the Linux kernel using all available cpu threads: `make -j $(nproc)`
+1. Install the Linux kernel modules: `sudo make modules_install`
+1. Install the Linux kernel: `sudo make install`. The following files are installed to the `/boot` directory, and the grub configuration is updated.
     - config-5.7.0-rc2+
     - System.map-5.7.0-rc2+
     - vmlinuz-5.7.0-rc2+
-11. Reboot the VM: `reboot`
-12. After reboot, check that statsfs is supported in the running Linux kernel:
+1. Reboot the VM: `reboot`
+1. After reboot, check that statsfs is supported in the running Linux kernel:
     - check Linux kernel version: `uname -mrs`
     - check statsfs filesystem is supported: `cat /proc/filesystems | grep statsfs`
-13. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/stats`
-14. Check statsfs is mounted: `cat /proc/mounts | grep stats`
-15. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/stats`
+1. Mount statfs: `sudo mount -t statsfs statsfs /sys/kernel/statsfs`
+1. Check statsfs is mounted: `cat /proc/mounts | grep stats`
+1. Change permission of statsfs filesystem to be readable and executable for everyone, but writable only by the owner (root): `sudo chmod -R 755 /sys/kernel/statsfs`
+
+The `statsfs` branch on `liiling/linux` includes a Kernel config, so this is not required:
+
+1. Clean the kernel tree: `make mrproper`
+1. Generate `.config` file. Some possible alternatives:
+	- `make localmodconfig` (generate a config from the kernel options currently in use)
+	- `make menuconfig` (command line interface for config creation)
+	- `cp -v /boot/config-$(uname -r) .config` (copy the boot config of the host machine)
+   
+Double check that stats_fs pseudo filesystem is enabled, i.e. set `CONFIG_STATS_FS=y`
 
 ## Install the user-space agent
 
 ### Install Golang
 1. `curl -L https://golang.org/dl/go1.15.2.linux-amd64.tar.gz > go1.15.2.tar.gz`
-2. Might require `sudo tar -C /usr/local -xzf go1.15.2.tar.gz`
-3. `export PATH=$PATH:/usr/local/go/bin`
+1. Might require `sudo tar -C /usr/local -xzf go1.15.2.tar.gz`
+1. `export PATH=$PATH:/usr/local/go/bin`
 
 ### Pull the agent from Git and running it
 1. `git clone https://github.com/liiling/kernel-metrics-agent.git`
-2. `cd kernel-metrics-agent`
-3. `git checkout statsfs-metadata`
-4. `cd statsfs`
-5. Symlink otelstats to GOROOT directory (since it is not published as a Go package)...`sudo ln -s /home/YOUR-USERNAME/kernel-metrics-agent/statsfs/otelstats /usr/local/go/src/otelstats`
-6. `go run main.go -exporter gcp -statsfspath /sys/kernel/statsfs`
-7. Check metrics in Google Cloud Platform's monitoring page
+1. `cd kernel-metrics-agent`
+1. `git checkout statsfs-metadata`
+1. `cd statsfs`
+1. Symlink otelstats to GOROOT directory (since it is not published as a Go package)...`sudo ln -s /home/YOUR-USERNAME/kernel-metrics-agent/statsfs/otelstats /usr/local/go/src/otelstats`
+1. `go run main.go -exporter gcp -statsfspath /sys/kernel/statsfs`
+1. Check metrics in Google Cloud Platform's monitoring page
 
 ## Instrument Statsfs with OpenTelemetry
 
